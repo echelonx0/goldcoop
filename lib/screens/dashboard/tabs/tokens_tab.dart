@@ -1,15 +1,20 @@
 // lib/screens/dashboard/tabs/tokens_tab.dart
 
 import 'package:flutter/material.dart';
+import 'package:delayed_display/delayed_display.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/admin_design_system.dart';
 import '../../../models/user_model.dart';
+import '../../../models/token_conversion_model.dart';
 import '../../../services/firestore_service.dart';
+import '../../../services/token_conversion_service.dart';
+import '../modals/token_conversion_modal.dart';
+import 'tokens/empty_state.dart';
 
 class TokensTab extends StatefulWidget {
   final String uid;
-  final VoidCallback? onConvert;
 
-  const TokensTab({super.key, required this.uid, this.onConvert});
+  const TokensTab({super.key, required this.uid});
 
   @override
   State<TokensTab> createState() => _TokensTabState();
@@ -18,6 +23,7 @@ class TokensTab extends StatefulWidget {
 class _TokensTabState extends State<TokensTab>
     with SingleTickerProviderStateMixin {
   late final FirestoreService _firestoreService;
+  late final TokenConversionService _tokenService;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -26,6 +32,7 @@ class _TokensTabState extends State<TokensTab>
   void initState() {
     super.initState();
     _firestoreService = FirestoreService();
+    _tokenService = TokenConversionService();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
@@ -70,6 +77,7 @@ class _TokensTabState extends State<TokensTab>
     );
   }
 
+  // ==================== HEADER ====================
   Widget _buildHeader() {
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -92,6 +100,7 @@ class _TokensTabState extends State<TokensTab>
     );
   }
 
+  // ==================== CONTENT ====================
   Widget _buildContent() {
     return StreamBuilder<UserModel?>(
       stream: _firestoreService.getUserStream(widget.uid),
@@ -104,17 +113,31 @@ class _TokensTabState extends State<TokensTab>
           return _buildErrorState();
         }
 
-        final tokenCount = snapshot.data?.financialProfile.tokenBalance ?? 0;
+        final user = snapshot.data;
+        final tokenCount = user?.financialProfile.tokenBalance ?? 0;
 
         if (tokenCount == 0) {
-          return _buildEmptyState();
+          return TokensEmptyState(
+            onStartEarning: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Navigate to goals coming soon')),
+              );
+            },
+          );
         }
 
-        return _buildTokensCard(tokenCount);
+        return Column(
+          children: [
+            _buildTokensCard(tokenCount, user),
+            const SizedBox(height: AdminDesignSystem.spacing32),
+            _buildConversionHistory(),
+          ],
+        );
       },
     );
   }
 
+  // ==================== LOADING STATE ====================
   Widget _buildLoadingState() {
     return Container(
       height: 200,
@@ -125,6 +148,7 @@ class _TokensTabState extends State<TokensTab>
     );
   }
 
+  // ==================== ERROR STATE ====================
   Widget _buildErrorState() {
     return SlideTransition(
       position: _slideAnimation,
@@ -162,7 +186,8 @@ class _TokensTabState extends State<TokensTab>
     );
   }
 
-  Widget _buildTokensCard(int tokenCount) {
+  // ==================== TOKENS CARD ====================
+  Widget _buildTokensCard(int tokenCount, UserModel? user) {
     return SlideTransition(
       position: _slideAnimation,
       child: FadeTransition(
@@ -270,10 +295,13 @@ class _TokensTabState extends State<TokensTab>
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: widget.onConvert,
+                  onPressed: tokenCount > 0
+                      ? () => _showConversionModal(user)
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: AdminDesignSystem.accentTeal,
+                    disabledBackgroundColor: Colors.white.withAlpha(128),
                     padding: const EdgeInsets.symmetric(
                       vertical: AdminDesignSystem.spacing16,
                     ),
@@ -293,7 +321,9 @@ class _TokensTabState extends State<TokensTab>
                         'Convert to Airtime',
                         style: AdminDesignSystem.bodyMedium.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: AdminDesignSystem.accentTeal,
+                          color: tokenCount > 0
+                              ? AdminDesignSystem.accentTeal
+                              : AdminDesignSystem.textTertiary,
                         ),
                       ),
                     ],
@@ -307,6 +337,77 @@ class _TokensTabState extends State<TokensTab>
     );
   }
 
+  // ==================== CONVERSION HISTORY ====================
+  Widget _buildConversionHistory() {
+    return DelayedDisplay(
+      delay: const Duration(milliseconds: 400),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Recent Conversions',
+            style: AdminDesignSystem.headingMedium.copyWith(
+              color: AdminDesignSystem.primaryNavy,
+            ),
+          ),
+          const SizedBox(height: AdminDesignSystem.spacing16),
+          StreamBuilder<List<TokenConversionModel>>(
+            stream: _tokenService.getUserConversionsStream(widget.uid),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: SizedBox(
+                    height: 100,
+                    child: CircularProgressIndicator(
+                      color: AdminDesignSystem.accentTeal,
+                    ),
+                  ),
+                );
+              }
+
+              final conversions = snapshot.data ?? [];
+
+              if (conversions.isEmpty) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AdminDesignSystem.spacing20,
+                  ),
+                  child: Center(
+                    child: Text(
+                      'No conversions yet',
+                      style: AdminDesignSystem.bodySmall.copyWith(
+                        color: AdminDesignSystem.textSecondary,
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: conversions.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AdminDesignSystem.spacing12),
+                itemBuilder: (context, index) {
+                  final conversion = conversions[index];
+                  return DelayedDisplay(
+                    delay: Duration(milliseconds: 450 + (index * 100)),
+                    child: _ConversionTile(
+                      conversion: conversion,
+                      onRetry: () => _retryConversion(conversion),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==================== INFO CARD ====================
   Widget _buildInfoCard({
     required IconData icon,
     required String label,
@@ -342,158 +443,214 @@ class _TokensTabState extends State<TokensTab>
     );
   }
 
-  Widget _buildEmptyState() {
-    return SlideTransition(
-      position: _slideAnimation,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Container(
-          padding: const EdgeInsets.all(AdminDesignSystem.spacing32),
-          decoration: AdminDesignSystem.cardDecoration,
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AdminDesignSystem.spacing20),
-                decoration: BoxDecoration(
-                  color: AdminDesignSystem.accentTeal.withAlpha(38),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.stars_outlined,
-                  size: 56,
-                  color: AdminDesignSystem.accentTeal,
-                ),
-              ),
-              const SizedBox(height: AdminDesignSystem.spacing20),
-              Text(
-                'No tokens yet',
-                style: AdminDesignSystem.headingMedium.copyWith(
-                  color: AdminDesignSystem.primaryNavy,
-                ),
-              ),
-              const SizedBox(height: AdminDesignSystem.spacing8),
-              Text(
-                'Earn tokens by completing savings milestones\nand reaching your financial goals',
-                style: AdminDesignSystem.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AdminDesignSystem.spacing24),
+  // ==================== MODAL ====================
+  void _showConversionModal(UserModel? user) {
+    if (user == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Unable to load user data')));
+      return;
+    }
 
-              // How to earn section
-              Container(
-                padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
-                decoration: BoxDecoration(
-                  color: AdminDesignSystem.background,
-                  borderRadius: BorderRadius.circular(
-                    AdminDesignSystem.radius12,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'How to earn tokens',
-                      style: AdminDesignSystem.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AdminDesignSystem.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: AdminDesignSystem.spacing12),
-                    _buildEarnOption(
-                      icon: Icons.flag,
-                      title: 'Complete savings goals',
-                      subtitle: 'Earn 50 tokens per goal',
-                    ),
-                    const SizedBox(height: AdminDesignSystem.spacing8),
-                    _buildEarnOption(
-                      icon: Icons.trending_up,
-                      title: 'Make investments',
-                      subtitle: 'Earn 10 tokens per investment',
-                    ),
-                    const SizedBox(height: AdminDesignSystem.spacing8),
-                    _buildEarnOption(
-                      icon: Icons.calendar_today,
-                      title: 'Daily savings streak',
-                      subtitle: 'Earn 5 tokens per week',
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: AdminDesignSystem.spacing24),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Navigate to goals or savings
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AdminDesignSystem.accentTeal,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AdminDesignSystem.spacing16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        AdminDesignSystem.radius12,
-                      ),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Start Earning',
-                    style: AdminDesignSystem.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => TokenConversionModal(
+        user: user,
+        tokenConversionService: _tokenService,
+        onSuccess: (conversionId) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Conversion submitted successfully!'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildEarnOption({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-  }) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(AdminDesignSystem.spacing8),
-          decoration: BoxDecoration(
-            color: AdminDesignSystem.accentTeal.withAlpha(38),
-            borderRadius: BorderRadius.circular(AdminDesignSystem.radius8),
-          ),
-          child: Icon(icon, size: 18, color: AdminDesignSystem.accentTeal),
+  // ==================== RETRY ====================
+  void _retryConversion(TokenConversionModel conversion) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Retry Conversion'),
+        content: Text(
+          'Retry converting ${conversion.tokenCount} tokens to airtime?',
         ),
-        const SizedBox(width: AdminDesignSystem.spacing12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final success = await _tokenService.retryConversion(
+                conversion.conversionId,
+              );
+              if (!mounted) return;
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    success ? 'Retry submitted' : 'Failed to retry',
+                  ),
+                ),
+              );
+            },
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ==================== CONVERSION TILE ====================
+class _ConversionTile extends StatelessWidget {
+  final TokenConversionModel conversion;
+  final VoidCallback onRetry;
+
+  const _ConversionTile({required this.conversion, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = _getStatusColor(conversion.status);
+    final statusIcon = _getStatusIcon(conversion.status);
+
+    return Container(
+      padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
+      decoration: BoxDecoration(
+        color: statusColor.withAlpha(12),
+        border: Border.all(color: statusColor.withAlpha(51)),
+        borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: AdminDesignSystem.bodySmall.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AdminDesignSystem.textPrimary,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${conversion.tokenCount} tokens → ₦${conversion.nairaValue.toStringAsFixed(0)} airtime',
+                      style: AdminDesignSystem.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AdminDesignSystem.primaryNavy,
+                      ),
+                    ),
+                    const SizedBox(height: AdminDesignSystem.spacing4),
+                    Text(
+                      conversion.displayPhoneNumber,
+                      style: AdminDesignSystem.bodySmall.copyWith(
+                        color: AdminDesignSystem.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Text(
-                subtitle,
-                style: AdminDesignSystem.labelSmall.copyWith(
-                  color: AdminDesignSystem.textTertiary,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AdminDesignSystem.spacing8,
+                  vertical: AdminDesignSystem.spacing4,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor.withAlpha(38),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(statusIcon, size: 14, color: statusColor),
+                    const SizedBox(width: 4),
+                    Text(
+                      conversion.status.name.capitalize(),
+                      style: AdminDesignSystem.labelSmall.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: AdminDesignSystem.spacing12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${conversion.networkName} • ${_formatDate(conversion.requestedAt)}',
+                style: AdminDesignSystem.bodySmall.copyWith(
+                  color: AdminDesignSystem.textTertiary,
+                ),
+              ),
+              if (conversion.canRetry)
+                GestureDetector(
+                  onTap: onRetry,
+                  child: Text(
+                    'Retry',
+                    style: AdminDesignSystem.labelSmall.copyWith(
+                      color: AdminDesignSystem.accentTeal,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
+  }
+
+  Color _getStatusColor(ConversionStatus status) {
+    switch (status) {
+      case ConversionStatus.pending:
+        return Colors.orange;
+      case ConversionStatus.approved:
+        return Colors.blue;
+      case ConversionStatus.processing:
+        return Colors.amber;
+      case ConversionStatus.completed:
+        return Colors.green;
+      case ConversionStatus.failed:
+        return AdminDesignSystem.statusError;
+      case ConversionStatus.cancelled:
+        return AdminDesignSystem.textSecondary;
+    }
+  }
+
+  IconData _getStatusIcon(ConversionStatus status) {
+    switch (status) {
+      case ConversionStatus.pending:
+        return Icons.schedule;
+      case ConversionStatus.approved:
+        return Icons.check_circle_outline;
+      case ConversionStatus.processing:
+        return Icons.hourglass_bottom;
+      case ConversionStatus.completed:
+        return Icons.check_circle;
+      case ConversionStatus.failed:
+        return Icons.error_outline;
+      case ConversionStatus.cancelled:
+        return Icons.cancel_outlined;
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return DateFormat('MMM d, h:mm a').format(date);
+  }
+}
+
+extension on String {
+  String capitalize() {
+    if (isEmpty) return this;
+    return this[0].toUpperCase() + substring(1);
   }
 }

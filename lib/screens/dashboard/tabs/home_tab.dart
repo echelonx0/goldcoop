@@ -1,16 +1,10 @@
 // lib/screens/dashboard/tabs/home_tab.dart
 
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/admin_design_system.dart';
-import '../../../models/goals_model.dart';
 import '../../../models/user_model.dart';
 import '../../../services/firestore_service.dart';
-import '../widgets/empty_goals_widget.dart';
-import '../widgets/error_widget.dart';
-import '../widgets/goal_card.dart';
 
 class HomeTab extends StatefulWidget {
   final String uid;
@@ -18,7 +12,8 @@ class HomeTab extends StatefulWidget {
   final VoidCallback? onInvest;
   final VoidCallback? onWithdraw;
   final VoidCallback? onHistory;
-  final VoidCallback? onViewAllGoals;
+  final VoidCallback? onTopUpAirtime;
+  final VoidCallback? onLearn;
 
   const HomeTab({
     super.key,
@@ -27,7 +22,8 @@ class HomeTab extends StatefulWidget {
     this.onInvest,
     this.onWithdraw,
     this.onHistory,
-    this.onViewAllGoals,
+    this.onTopUpAirtime,
+    this.onLearn,
   });
 
   @override
@@ -87,11 +83,11 @@ class _HomeTabState extends State<HomeTab> {
                     onHistory: widget.onHistory,
                   ),
                   const SizedBox(height: AdminDesignSystem.spacing24),
-                  _AnimatedGoalsSection(
-                    uid: widget.uid,
-                    firestoreService: _firestoreService,
-                    currencyFormatter: _currencyFormatter,
-                    onViewAllGoals: widget.onViewAllGoals,
+                  _ActionCardsGrid(
+                    onInvest: widget.onInvest,
+                    onWithdraw: widget.onWithdraw,
+                    onTopUpAirtime: widget.onTopUpAirtime,
+                    onLearn: widget.onLearn,
                   ),
                 ]),
               ),
@@ -377,124 +373,174 @@ class _AnimatedActionButtonState extends State<_AnimatedActionButton>
   }
 }
 
-// ==================== ANIMATED GOALS SECTION ====================
+// ==================== ACTION CARDS GRID ====================
 
-class _AnimatedGoalsSection extends StatelessWidget {
-  final String uid;
-  final FirestoreService firestoreService;
-  final NumberFormat currencyFormatter;
-  final VoidCallback? onViewAllGoals;
+class _ActionCardsGrid extends StatelessWidget {
+  final VoidCallback? onInvest;
+  final VoidCallback? onWithdraw;
+  final VoidCallback? onTopUpAirtime;
+  final VoidCallback? onLearn;
 
-  const _AnimatedGoalsSection({
-    required this.uid,
-    required this.firestoreService,
-    required this.currencyFormatter,
-    this.onViewAllGoals,
+  const _ActionCardsGrid({
+    this.onInvest,
+    this.onWithdraw,
+    this.onTopUpAirtime,
+    this.onLearn,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return GridView.count(
+      crossAxisCount: 2,
+      mainAxisSpacing: AdminDesignSystem.spacing12,
+      crossAxisSpacing: AdminDesignSystem.spacing12,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      childAspectRatio: 0.95,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AdminDesignSystem.spacing4,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Your Goals',
-                      style: AdminDesignSystem.headingMedium.copyWith(
-                        color: AdminDesignSystem.primaryNavy,
-                      ),
-                    ),
-                    const SizedBox(height: AdminDesignSystem.spacing4),
-                    Text(
-                      'Track your savings progress',
-                      style: AdminDesignSystem.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: onViewAllGoals,
-                child: Padding(
-                  padding: const EdgeInsets.all(AdminDesignSystem.spacing8),
-                  child: Text(
-                    'View all',
-                    style: AdminDesignSystem.labelMedium.copyWith(
-                      color: AdminDesignSystem.accentTeal,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+        _AnimatedActionCard(
+          icon: Icons.trending_up,
+          title: 'Invest',
+          subtitle: 'Grow your wealth',
+          color: AdminDesignSystem.accentTeal,
+          delay: 200,
+          onPressed: onInvest,
         ),
-        const SizedBox(height: AdminDesignSystem.spacing16),
-        StreamBuilder<List<GoalModel>>(
-          stream: firestoreService.getPriorityGoalsStream(uid),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(AdminDesignSystem.spacing32),
-                  child: CircularProgressIndicator(
-                    color: AdminDesignSystem.accentTeal,
-                  ),
-                ),
-              );
-            }
-
-            if (snapshot.hasError) {
-              log(snapshot.error.toString());
-              return ErrorState(message: 'Error loading goals');
-            }
-
-            final goals = snapshot.data ?? [];
-
-            if (goals.isEmpty) {
-              return EmptyGoalsState();
-            }
-
-            return _AnimatedGoalsList(
-              goals: goals,
-              currencyFormatter: currencyFormatter,
-            );
-          },
+        _AnimatedActionCard(
+          icon: Icons.arrow_circle_down_outlined,
+          title: 'Withdraw',
+          subtitle: 'Get your funds',
+          color: const Color(0xFF9B59B6),
+          delay: 300,
+          onPressed: onWithdraw,
+        ),
+        _AnimatedActionCard(
+          icon: Icons.phone_android,
+          title: 'Buy Airtime',
+          subtitle: 'Top up instantly',
+          color: const Color(0xFF3498DB),
+          delay: 400,
+          onPressed: onTopUpAirtime,
+        ),
+        _AnimatedActionCard(
+          icon: Icons.school_outlined,
+          title: 'Learn',
+          subtitle: 'Financial tips',
+          color: const Color(0xFFF39C12),
+          delay: 500,
+          onPressed: onLearn,
         ),
       ],
     );
   }
 }
 
-// ==================== ANIMATED GOALS LIST ====================
+// ==================== ANIMATED ACTION CARD ====================
 
-class _AnimatedGoalsList extends StatelessWidget {
-  final List<GoalModel> goals;
-  final NumberFormat currencyFormatter;
+class _AnimatedActionCard extends StatefulWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final int delay;
+  final VoidCallback? onPressed;
 
-  const _AnimatedGoalsList({
-    required this.goals,
-    required this.currencyFormatter,
+  const _AnimatedActionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.delay,
+    this.onPressed,
   });
 
   @override
+  State<_AnimatedActionCard> createState() => _AnimatedActionCardState();
+}
+
+class _AnimatedActionCardState extends State<_AnimatedActionCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(
-        goals.length,
-        (index) => AnimatedGoalCard(
-          goal: goals[index],
-          currencyFormatter: currencyFormatter,
-          index: index,
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onPressed,
+            borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
+            child: Container(
+              decoration: AdminDesignSystem.cardDecoration,
+              padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AdminDesignSystem.spacing12),
+                    decoration: BoxDecoration(
+                      color: widget.color.withAlpha(38),
+                      borderRadius: BorderRadius.circular(
+                        AdminDesignSystem.radius12,
+                      ),
+                    ),
+                    child: Icon(widget.icon, color: widget.color, size: 32),
+                  ),
+                  const SizedBox(height: AdminDesignSystem.spacing12),
+                  Text(
+                    widget.title,
+                    style: AdminDesignSystem.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AdminDesignSystem.textPrimary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AdminDesignSystem.spacing4),
+                  Text(
+                    widget.subtitle,
+                    style: AdminDesignSystem.bodySmall.copyWith(
+                      color: AdminDesignSystem.textTertiary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
