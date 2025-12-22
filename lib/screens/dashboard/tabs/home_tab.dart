@@ -8,7 +8,7 @@ import '../../../services/firestore_service.dart';
 
 class HomeTab extends StatefulWidget {
   final String uid;
-  final VoidCallback? onTopUp;
+  final VoidCallback? onTapGoals;
   final VoidCallback? onInvest;
   final VoidCallback? onWithdraw;
   final VoidCallback? onHistory;
@@ -18,7 +18,7 @@ class HomeTab extends StatefulWidget {
   const HomeTab({
     super.key,
     required this.uid,
-    this.onTopUp,
+    this.onTapGoals,
     this.onInvest,
     this.onWithdraw,
     this.onHistory,
@@ -74,10 +74,10 @@ class _HomeTabState extends State<HomeTab> {
               padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  _AnimatedBalanceCard(
+                  AnimatedBalanceCard(
                     user: user,
                     currencyFormatter: _currencyFormatter,
-                    onTopUp: widget.onTopUp,
+                    onGoalsTapped: widget.onTapGoals,
                     onInvest: widget.onInvest,
                     onWithdraw: widget.onWithdraw,
                     onHistory: widget.onHistory,
@@ -101,28 +101,29 @@ class _HomeTabState extends State<HomeTab> {
 
 // ==================== ANIMATED BALANCE CARD ====================
 
-class _AnimatedBalanceCard extends StatefulWidget {
+class AnimatedBalanceCard extends StatefulWidget {
   final UserModel user;
   final NumberFormat currencyFormatter;
-  final VoidCallback? onTopUp;
+  final VoidCallback? onGoalsTapped;
   final VoidCallback? onInvest;
   final VoidCallback? onWithdraw;
   final VoidCallback? onHistory;
 
-  const _AnimatedBalanceCard({
+  const AnimatedBalanceCard({
+    super.key,
     required this.user,
     required this.currencyFormatter,
-    this.onTopUp,
+    this.onGoalsTapped,
     this.onInvest,
     this.onWithdraw,
     this.onHistory,
   });
 
   @override
-  State<_AnimatedBalanceCard> createState() => _AnimatedBalanceCardState();
+  State<AnimatedBalanceCard> createState() => _AnimatedBalanceCardState();
 }
 
-class _AnimatedBalanceCardState extends State<_AnimatedBalanceCard>
+class _AnimatedBalanceCardState extends State<AnimatedBalanceCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -250,8 +251,8 @@ class _AnimatedBalanceCardState extends State<_AnimatedBalanceCard>
                 children: [
                   _AnimatedActionButton(
                     icon: Icons.add_circle_outline,
-                    label: 'Top up',
-                    onPressed: widget.onTopUp,
+                    label: 'Set Goal',
+                    onPressed: widget.onGoalsTapped,
                     delay: 200,
                   ),
                   const SizedBox(width: AdminDesignSystem.spacing8),
@@ -268,7 +269,7 @@ class _AnimatedBalanceCardState extends State<_AnimatedBalanceCard>
                     onPressed: widget.onWithdraw,
                     delay: 400,
                   ),
-                  const SizedBox(width: AdminDesignSystem.spacing8),
+                  // const SizedBox(width: AdminDesignSystem.spacing8),
                   _AnimatedActionButton(
                     icon: Icons.receipt_long_outlined,
                     label: 'History',
@@ -416,8 +417,8 @@ class _ActionCardsGrid extends StatelessWidget {
         ),
         _AnimatedActionCard(
           icon: Icons.phone_android,
-          title: 'Buy Airtime',
-          subtitle: 'Top up instantly',
+          title: 'Learning Center',
+          subtitle: 'Improve your financial knowledge',
           color: const Color(0xFF3498DB),
           delay: 400,
           onPressed: onTopUpAirtime,

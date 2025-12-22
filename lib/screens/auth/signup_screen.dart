@@ -205,19 +205,7 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundNeutral,
-      appBar: AppBar(
-        backgroundColor: AppColors.backgroundWhite,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          color: AppColors.deepNavy,
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          'Create Account',
-          style: AppTextTheme.heading3.copyWith(color: AppColors.deepNavy),
-        ),
-      ),
+
       body: SafeArea(
         child: Consumer<AuthProvider>(
           builder: (context, authProvider, _) {

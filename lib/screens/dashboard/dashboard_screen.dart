@@ -800,11 +800,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         HomeTab(
           uid: uid,
-          onTopUp: () {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Top-up coming soon')));
-          },
+          onTapGoals: () {},
           onInvest: () {
             Navigator.pushNamed(context, '/invest');
           },
