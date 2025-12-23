@@ -50,7 +50,7 @@ class _SavingsTabState extends State<SavingsTab> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AdminDesignSystem.background,
-      appBar: _buildAppBar(),
+      // appBar: _buildAppBar(),
       body: FadeTransition(
         opacity: _fadeController,
         child: TabBarView(

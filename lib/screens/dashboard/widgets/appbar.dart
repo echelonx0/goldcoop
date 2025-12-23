@@ -29,6 +29,7 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       backgroundColor: AppColors.backgroundWhite,
+      automaticallyImplyLeading: false,
       elevation: 0,
       title: Text(
         user != null ? 'Welcome, ${user!.firstName}' : 'Welcome',

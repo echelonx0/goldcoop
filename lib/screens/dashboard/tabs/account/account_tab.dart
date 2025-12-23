@@ -1,13 +1,13 @@
-// lib/screens/dashboard/tabs/account_tab.dart
+// lib/screens/dashboard/tabs/account/account_tab.dart
 
 import 'package:flutter/material.dart';
-import '../../../components/base/app_card.dart';
-import '../../../components/base/app_button.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../models/user_model.dart';
-import '../../../providers/auth_provider.dart';
-import '../../../services/firestore_service.dart';
-import '../../../screens/admin/admin_dashboard.dart';
+import '../../../../components/base/app_card.dart';
+import '../../../../components/base/app_button.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../models/user_model.dart';
+import '../../../../providers/auth_provider.dart';
+import '../../../../services/firestore_service.dart';
+import '../../../admin/admin_dashboard.dart';
 
 class AccountTab extends StatelessWidget {
   final AuthProvider authProvider;
