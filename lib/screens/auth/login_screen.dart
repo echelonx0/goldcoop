@@ -387,7 +387,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             icon: Icons.login_rounded,
                             title: 'Welcome Back',
                             subtitle:
-                                'Access your gold savings and grow your wealth',
+                                'We are glad you are part of our community.',
                           ),
                           const SizedBox(height: AppSpacing.xl),
 

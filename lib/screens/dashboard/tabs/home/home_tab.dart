@@ -1,4 +1,4 @@
-// lib/screens/dashboard/tabs/home_tab.dart
+// // lib/screens/dashboard/tabs/home_tab.dart
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +8,7 @@ import '../../../../models/goals_model.dart';
 import '../../../../models/user_model.dart';
 import '../../../../services/firestore_service.dart';
 import '../../../../services/token_conversion_service.dart';
+import '../../modals/learning_center_modal.dart';
 import '../../modals/token_conversion_modal.dart';
 import '../../modals/savings_clock_modal.dart';
 import 'action_card.dart';
@@ -21,8 +22,6 @@ class HomeTab extends StatefulWidget {
   final VoidCallback? onInvest;
   final VoidCallback? onWithdraw;
   final VoidCallback? onHistory;
-  final VoidCallback? onTopUpAirtime;
-  final VoidCallback? onLearn;
   final Function(GoalModel)? onViewGoal;
   final VoidCallback? onCreateGoal;
 
@@ -33,8 +32,6 @@ class HomeTab extends StatefulWidget {
     this.onInvest,
     this.onWithdraw,
     this.onHistory,
-    this.onTopUpAirtime,
-    this.onLearn,
     this.onViewGoal,
     this.onCreateGoal,
   });
@@ -64,12 +61,10 @@ class _HomeTabState extends State<HomeTab> {
     _tokenService = TokenConversionService();
     _pageController = PageController(initialPage: _currentPage);
 
-    // Convert to broadcast stream so multiple widgets can listen
     _userStream = _firestoreService
         .getUserStream(widget.uid)
         .asBroadcastStream();
 
-    // Stream for goals (used by Savings Clock)
     _goalsStream = _firestoreService
         .getUserGoalsStream(widget.uid)
         .asBroadcastStream();
@@ -104,9 +99,7 @@ class _HomeTabState extends State<HomeTab> {
                     currentPage: _currentPage,
                     currencyFormatter: _currencyFormatter,
                     onPageChanged: (index) {
-                      setState(() {
-                        _currentPage = index;
-                      });
+                      setState(() => _currentPage = index);
                     },
                     onTapGoals: widget.onTapGoals,
                     onInvest: widget.onInvest,
@@ -119,7 +112,7 @@ class _HomeTabState extends State<HomeTab> {
                     goalsStream: _goalsStream,
                     onInvest: widget.onInvest,
                     onWithdraw: widget.onWithdraw,
-                    onLearn: widget.onLearn,
+                    onLearn: _showLearningCenterModal,
                     onSavingsClock: _showSavingsClockModal,
                   ),
                 ]),
@@ -130,6 +123,8 @@ class _HomeTabState extends State<HomeTab> {
       },
     );
   }
+
+  // ==================== MODALS ====================
 
   void _showConversionModal(UserModel user) {
     showModalBottomSheet(
@@ -162,6 +157,21 @@ class _HomeTabState extends State<HomeTab> {
         goals: goals.where((g) => g.status == GoalStatus.active).toList(),
         onCreateGoal: widget.onCreateGoal,
         onViewGoal: widget.onViewGoal,
+      ),
+    );
+  }
+
+  void _showLearningCenterModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => LearningCenterModal(
+        userId: widget.uid,
+        onSubmitInterest: (interest) async {
+          final result = await _firestoreService.saveLearningInterest(interest);
+          return result != null;
+        },
       ),
     );
   }
@@ -222,13 +232,8 @@ class _BalanceCardsSection extends StatelessWidget {
   }
 
   Widget _buildFiatCard() {
-    if (isLoading) {
-      return BalanceCardSkeleton.fiat();
-    }
-
-    if (hasError || user == null) {
-      return BalanceCardError.fiat();
-    }
+    if (isLoading) return BalanceCardSkeleton.fiat();
+    if (hasError || user == null) return BalanceCardError.fiat();
 
     return FiatBalanceCard(
       user: user!,
@@ -241,13 +246,8 @@ class _BalanceCardsSection extends StatelessWidget {
   }
 
   Widget _buildTokenCard() {
-    if (isLoading) {
-      return BalanceCardSkeleton.token();
-    }
-
-    if (hasError || user == null) {
-      return BalanceCardError.token();
-    }
+    if (isLoading) return BalanceCardSkeleton.token();
+    if (hasError || user == null) return BalanceCardError.token();
 
     return TokensBalanceCard(
       user: user!,
@@ -353,13 +353,12 @@ class _ActionCardsGrid extends StatelessWidget {
             AnimatedActionCard(
               icon: Icons.school_outlined,
               title: 'Learning Center',
-              subtitle: 'Improve your financial knowledge',
+              subtitle: 'Financial education',
               color: const Color(0xFF3498DB),
               delay: 400,
               onPressed: onLearn,
             ),
-            // Savings Clock - replaces Integrations
-            _SavingsClockActionCard(
+            _SavingsClockCard(
               activeGoalsCount: activeGoals.length,
               delay: 500,
               onPressed: () => onSavingsClock(goals),
@@ -371,29 +370,28 @@ class _ActionCardsGrid extends StatelessWidget {
   }
 }
 
-// ==================== SAVINGS CLOCK ACTION CARD ====================
+// ==================== SAVINGS CLOCK CARD ====================
 
-class _SavingsClockActionCard extends StatefulWidget {
+class _SavingsClockCard extends StatefulWidget {
   final int activeGoalsCount;
   final int delay;
   final VoidCallback? onPressed;
 
-  const _SavingsClockActionCard({
+  const _SavingsClockCard({
     required this.activeGoalsCount,
     required this.delay,
     this.onPressed,
   });
 
   @override
-  State<_SavingsClockActionCard> createState() =>
-      _SavingsClockActionCardState();
+  State<_SavingsClockCard> createState() => _SavingsClockCardState();
 }
 
-class _SavingsClockActionCardState extends State<_SavingsClockActionCard>
+class _SavingsClockCardState extends State<_SavingsClockCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
 
-  static const Color _clockColor = Color(0xFFE67E22); // Warm orange
+  static const Color _clockColor = Color(0xFFE67E22);
 
   @override
   void initState() {
@@ -433,7 +431,6 @@ class _SavingsClockActionCardState extends State<_SavingsClockActionCard>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Animated clock icon with pulse
                 AnimatedBuilder(
                   animation: _pulseController,
                   builder: (context, child) {
@@ -457,7 +454,6 @@ class _SavingsClockActionCardState extends State<_SavingsClockActionCard>
                             color: _clockColor,
                             size: 32,
                           ),
-                          // Subtle glow effect when there are active goals
                           if (widget.activeGoalsCount > 0)
                             Positioned(
                               right: -2,

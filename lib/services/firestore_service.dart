@@ -9,9 +9,155 @@ import '../models/user_model.dart';
 import '../models/transaction_model.dart';
 import '../models/investment_model.dart';
 import '../models/callback_and_request_models.dart';
+import '../screens/dashboard/modals/learning_center_modal.dart';
 
 class FirestoreService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // ==================== LEARNING INTERESTS ====================
+
+  /// Save user's learning interests (for Learning Center waitlist)
+  Future<String?> saveLearningInterest(LearningInterestModel interest) async {
+    try {
+      final docRef = _firestore.collection('learning_interests').doc();
+
+      await docRef.set({
+        'interestId': docRef.id,
+        'userId': interest.userId,
+        'selectedTopics': interest.selectedTopics,
+        'customTopic': interest.customTopic,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      return docRef.id;
+    } catch (e) {
+      log('Error saving learning interest: $e');
+      return null;
+    }
+  }
+
+  /// Check if user has already submitted interests
+  Future<bool> hasSubmittedLearningInterest(String userId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('learning_interests')
+          .where('userId', isEqualTo: userId)
+          .limit(1)
+          .get();
+
+      return snapshot.docs.isNotEmpty;
+    } catch (e) {
+      log('Error checking learning interest: $e');
+      return false;
+    }
+  }
+
+  /// Get user's learning interests
+  Future<LearningInterestModel?> getUserLearningInterest(String userId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('learning_interests')
+          .where('userId', isEqualTo: userId)
+          .orderBy('createdAt', descending: true)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) return null;
+
+      return LearningInterestModel.fromJson(snapshot.docs.first.data());
+    } catch (e) {
+      log('Error fetching learning interest: $e');
+      return null;
+    }
+  }
+
+  /// Update existing learning interest (if user wants to modify)
+  Future<bool> updateLearningInterest({
+    required String interestId,
+    List<String>? selectedTopics,
+    String? customTopic,
+  }) async {
+    try {
+      final updates = <String, dynamic>{
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      if (selectedTopics != null) updates['selectedTopics'] = selectedTopics;
+      if (customTopic != null) updates['customTopic'] = customTopic;
+
+      await _firestore
+          .collection('learning_interests')
+          .doc(interestId)
+          .update(updates);
+
+      return true;
+    } catch (e) {
+      log('Error updating learning interest: $e');
+      return false;
+    }
+  }
+
+  // ==================== ADMIN: ANALYTICS HELPERS ====================
+
+  /// Get all learning interests (for admin analysis)
+  Future<List<LearningInterestModel>> getAllLearningInterests({
+    int limit = 100,
+  }) async {
+    try {
+      final snapshot = await _firestore
+          .collection('learning_interests')
+          .orderBy('createdAt', descending: true)
+          .limit(limit)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => LearningInterestModel.fromJson(doc.data()))
+          .toList();
+    } catch (e) {
+      log('Error fetching all learning interests: $e');
+      return [];
+    }
+  }
+
+  /// Get topic popularity counts (for admin analysis)
+  Future<Map<String, int>> getLearningTopicCounts() async {
+    try {
+      final snapshot = await _firestore.collection('learning_interests').get();
+
+      final counts = <String, int>{};
+
+      for (final doc in snapshot.docs) {
+        final topics = List<String>.from(doc.data()['selectedTopics'] ?? []);
+        for (final topic in topics) {
+          counts[topic] = (counts[topic] ?? 0) + 1;
+        }
+      }
+
+      return counts;
+    } catch (e) {
+      log('Error fetching topic counts: $e');
+      return {};
+    }
+  }
+
+  /// Get custom topic suggestions (for admin analysis)
+  Future<List<String>> getCustomTopicSuggestions() async {
+    try {
+      final snapshot = await _firestore
+          .collection('learning_interests')
+          .where('customTopic', isNull: false)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => doc.data()['customTopic'] as String?)
+          .whereType<String>()
+          .where((topic) => topic.isNotEmpty)
+          .toList();
+    } catch (e) {
+      log('Error fetching custom topics: $e');
+      return [];
+    }
+  }
 
   // ==================== clients COLLECTION ====================
 
