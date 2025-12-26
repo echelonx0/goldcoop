@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/admin_design_system.dart';
+import '../../../../models/goals_model.dart';
 import '../../../../models/user_model.dart';
 import '../../../../services/firestore_service.dart';
 import '../../../../services/token_conversion_service.dart';
 import '../../modals/token_conversion_modal.dart';
+import '../../modals/savings_clock_modal.dart';
 import 'action_card.dart';
 import 'balance_card-skeleton.dart';
 import 'token_balance_card.dart';
@@ -21,6 +23,8 @@ class HomeTab extends StatefulWidget {
   final VoidCallback? onHistory;
   final VoidCallback? onTopUpAirtime;
   final VoidCallback? onLearn;
+  final Function(GoalModel)? onViewGoal;
+  final VoidCallback? onCreateGoal;
 
   const HomeTab({
     super.key,
@@ -31,6 +35,8 @@ class HomeTab extends StatefulWidget {
     this.onHistory,
     this.onTopUpAirtime,
     this.onLearn,
+    this.onViewGoal,
+    this.onCreateGoal,
   });
 
   @override
@@ -42,6 +48,7 @@ class _HomeTabState extends State<HomeTab> {
   late final TokenConversionService _tokenService;
   late final PageController _pageController;
   late final Stream<UserModel?> _userStream;
+  late final Stream<List<GoalModel>> _goalsStream;
 
   final _currencyFormatter = NumberFormat.currency(
     symbol: '₦',
@@ -60,6 +67,11 @@ class _HomeTabState extends State<HomeTab> {
     // Convert to broadcast stream so multiple widgets can listen
     _userStream = _firestoreService
         .getUserStream(widget.uid)
+        .asBroadcastStream();
+
+    // Stream for goals (used by Savings Clock)
+    _goalsStream = _firestoreService
+        .getUserGoalsStream(widget.uid)
         .asBroadcastStream();
   }
 
@@ -104,10 +116,11 @@ class _HomeTabState extends State<HomeTab> {
                   ),
                   const SizedBox(height: AdminDesignSystem.spacing24),
                   _ActionCardsGrid(
+                    goalsStream: _goalsStream,
                     onInvest: widget.onInvest,
                     onWithdraw: widget.onWithdraw,
-                    onTopUpAirtime: widget.onTopUpAirtime,
                     onLearn: widget.onLearn,
+                    onSavingsClock: _showSavingsClockModal,
                   ),
                 ]),
               ),
@@ -136,6 +149,19 @@ class _HomeTabState extends State<HomeTab> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  void _showSavingsClockModal(List<GoalModel> goals) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => SavingsClockModal(
+        goals: goals.where((g) => g.status == GoalStatus.active).toList(),
+        onCreateGoal: widget.onCreateGoal,
+        onViewGoal: widget.onViewGoal,
       ),
     );
   }
@@ -276,61 +302,207 @@ class _PageIndicator extends StatelessWidget {
 // ==================== ACTION CARDS GRID ====================
 
 class _ActionCardsGrid extends StatelessWidget {
+  final Stream<List<GoalModel>> goalsStream;
   final VoidCallback? onInvest;
   final VoidCallback? onWithdraw;
-  final VoidCallback? onTopUpAirtime;
   final VoidCallback? onLearn;
+  final void Function(List<GoalModel>) onSavingsClock;
 
   const _ActionCardsGrid({
+    required this.goalsStream,
     this.onInvest,
     this.onWithdraw,
-    this.onTopUpAirtime,
     this.onLearn,
+    required this.onSavingsClock,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      mainAxisSpacing: AdminDesignSystem.spacing12,
-      crossAxisSpacing: AdminDesignSystem.spacing12,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 0.95,
-      children: [
-        AnimatedActionCard(
-          icon: Icons.trending_up,
-          title: 'Invest',
-          subtitle: 'Grow your wealth',
-          color: AdminDesignSystem.accentTeal,
-          delay: 200,
-          onPressed: onInvest,
+    return StreamBuilder<List<GoalModel>>(
+      stream: goalsStream,
+      builder: (context, snapshot) {
+        final goals = snapshot.data ?? [];
+        final activeGoals = goals
+            .where((g) => g.status == GoalStatus.active)
+            .toList();
+
+        return GridView.count(
+          crossAxisCount: 2,
+          mainAxisSpacing: AdminDesignSystem.spacing12,
+          crossAxisSpacing: AdminDesignSystem.spacing12,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: 0.95,
+          children: [
+            AnimatedActionCard(
+              icon: Icons.trending_up,
+              title: 'Invest',
+              subtitle: 'Grow your wealth',
+              color: AdminDesignSystem.accentTeal,
+              delay: 200,
+              onPressed: onInvest,
+            ),
+            AnimatedActionCard(
+              icon: Icons.arrow_circle_down_outlined,
+              title: 'Withdraw',
+              subtitle: 'Get your funds',
+              color: const Color(0xFF9B59B6),
+              delay: 300,
+              onPressed: onWithdraw,
+            ),
+            AnimatedActionCard(
+              icon: Icons.school_outlined,
+              title: 'Learning Center',
+              subtitle: 'Improve your financial knowledge',
+              color: const Color(0xFF3498DB),
+              delay: 400,
+              onPressed: onLearn,
+            ),
+            // Savings Clock - replaces Integrations
+            _SavingsClockActionCard(
+              activeGoalsCount: activeGoals.length,
+              delay: 500,
+              onPressed: () => onSavingsClock(goals),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+// ==================== SAVINGS CLOCK ACTION CARD ====================
+
+class _SavingsClockActionCard extends StatefulWidget {
+  final int activeGoalsCount;
+  final int delay;
+  final VoidCallback? onPressed;
+
+  const _SavingsClockActionCard({
+    required this.activeGoalsCount,
+    required this.delay,
+    this.onPressed,
+  });
+
+  @override
+  State<_SavingsClockActionCard> createState() =>
+      _SavingsClockActionCardState();
+}
+
+class _SavingsClockActionCardState extends State<_SavingsClockActionCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+
+  static const Color _clockColor = Color(0xFFE67E22); // Warm orange
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 300 + widget.delay),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, (1 - value) * 20),
+          child: Opacity(opacity: value, child: child),
+        );
+      },
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: widget.onPressed,
+          borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
+          child: Container(
+            decoration: AdminDesignSystem.cardDecoration,
+            padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Animated clock icon with pulse
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    return Container(
+                      padding: const EdgeInsets.all(
+                        AdminDesignSystem.spacing12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _clockColor.withAlpha(
+                          (26 + (_pulseController.value * 12)).toInt(),
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          AdminDesignSystem.radius12,
+                        ),
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Icon(
+                            Icons.watch_later_outlined,
+                            color: _clockColor,
+                            size: 32,
+                          ),
+                          // Subtle glow effect when there are active goals
+                          if (widget.activeGoalsCount > 0)
+                            Positioned(
+                              right: -2,
+                              top: -2,
+                              child: Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: AdminDesignSystem.statusActive,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: AdminDesignSystem.spacing12),
+                Text(
+                  'Savings Clock',
+                  style: AdminDesignSystem.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AdminDesignSystem.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AdminDesignSystem.spacing4),
+                Text(
+                  widget.activeGoalsCount > 0
+                      ? '${widget.activeGoalsCount} active goal${widget.activeGoalsCount > 1 ? 's' : ''}'
+                      : 'Track your progress',
+                  style: AdminDesignSystem.bodySmall.copyWith(
+                    color: AdminDesignSystem.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
         ),
-        AnimatedActionCard(
-          icon: Icons.arrow_circle_down_outlined,
-          title: 'Withdraw',
-          subtitle: 'Get your funds',
-          color: const Color(0xFF9B59B6),
-          delay: 300,
-          onPressed: onWithdraw,
-        ),
-        AnimatedActionCard(
-          icon: Icons.school_outlined,
-          title: 'Learning Center',
-          subtitle: 'Improve your financial knowledge',
-          color: const Color(0xFF3498DB),
-          delay: 400,
-          onPressed: onLearn,
-        ),
-        AnimatedActionCard(
-          icon: Icons.sim_card_outlined,
-          title: 'Integrations',
-          subtitle: 'Other Tools',
-          color: const Color(0xFFF39C12),
-          delay: 500,
-          onPressed: onTopUpAirtime,
-        ),
-      ],
+      ),
     );
   }
 }
