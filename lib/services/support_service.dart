@@ -2,6 +2,7 @@
 
 import 'dart:developer' as dev;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import '../models/support_models.dart';
 
 class SupportService {
@@ -28,6 +29,32 @@ class SupportService {
     } catch (e) {
       dev.log('Error fetching FAQ: $e');
       return [];
+    }
+  }
+
+  // Add this method to your existing SupportService class
+  // lib/services/support_service.dart
+
+  // ==================== ADD TO SUPPORT SERVICE ====================
+
+  /// Gets the conversation linked to a specific ticket
+  /// Returns null if no conversation exists for this ticket
+  Future<SupportConversation?> getConversationByTicketId(
+    String ticketId,
+  ) async {
+    try {
+      final snapshot = await _firestore
+          .collection('support_conversations')
+          .where('relatedTicketId', isEqualTo: ticketId)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) return null;
+
+      return SupportConversation.fromFirestore(snapshot.docs.first);
+    } catch (e) {
+      debugPrint('Error getting conversation by ticket ID: $e');
+      return null;
     }
   }
 
