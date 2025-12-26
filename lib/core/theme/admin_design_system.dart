@@ -7,7 +7,7 @@ class AdminDesignSystem {
   static const background = Color(0xFFF5F7FA);
   static const cardBackground = Color(0xFFFFFFFF);
   static const primaryNavy = Color(0xFF1E3A5F);
-  static const accentTeal = Color(0xff41A67E);
+  static const accentTeal = Color(0xFF48cfcb);
   static const textPrimary = Color(0xFF1A1A1A);
   static const textSecondary = Color(0xFF6B7280);
   static const textTertiary = Color(0xFF9CA3AF);

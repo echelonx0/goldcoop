@@ -180,8 +180,8 @@ class FirestoreService {
       try {
         return UserModel.fromFirestore(doc);
       } catch (e) {
-        print('[getUserStream] Parse error: $e');
-        print('[getUserStream] Data: ${doc.data()}');
+        // print('[getUserStream] Parse error: $e');
+        // print('[getUserStream] Data: ${doc.data()}');
         return null; // Return null instead of crashing
       }
     });

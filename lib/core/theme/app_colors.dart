@@ -16,8 +16,8 @@ class AppColors {
   static const Color navyLight = Color(0xFFE8EDF7);
 
   // Tertiary Accents
-  static const Color tealSuccess = Color(0xFF41A67E);
-  static const Color emerald = Color(0xFF00B876);
+  static const Color tealSuccess = Color(0xFF48cfcb);
+  static const Color emerald = Color(0xFF48cfcb);
   static const Color warmRed = Color(0xFFE74C3C);
   static const Color softAmber = Color(0xFFF39C12);
 
