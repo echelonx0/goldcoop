@@ -227,6 +227,18 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  // ==================== CHANGE PASSWORD ====================
+  /// Change user password (alias for updatePassword for clarity)
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    return await updatePassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
+  }
+
   // ==================== DELETE ACCOUNT ====================
   Future<bool> deleteAccount({required String password}) async {
     _isLoading = true;

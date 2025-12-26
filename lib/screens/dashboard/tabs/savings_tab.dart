@@ -61,57 +61,6 @@ class _SavingsTabState extends State<SavingsTab> with TickerProviderStateMixin {
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: AdminDesignSystem.cardBackground,
-      elevation: 0,
-      // title: Row(
-      //   mainAxisAlignment: MainAxisAlignment.center,
-      //   children: [
-      //     Text(
-      //       'Savings',
-      //       style: AdminDesignSystem.headingLarge.copyWith(
-      //         color: AdminDesignSystem.primaryNavy,
-      //         fontSize: 12,
-      //       ),
-      //     ),
-      //     SizedBox(width: AdminDesignSystem.spacing8),
-      //     Text(
-      //       'Investment Calculator',
-      //       style: AdminDesignSystem.headingLarge.copyWith(
-      //         color: AdminDesignSystem.primaryNavy,
-      //         fontSize: 12,
-      //       ),
-      //     ),
-      //   ],
-      // ),
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(56),
-        child: Container(
-          color: AdminDesignSystem.cardBackground,
-          child: TabBar(
-            controller: _tabController,
-            labelColor: AdminDesignSystem.accentTeal,
-            unselectedLabelColor: AdminDesignSystem.textSecondary,
-            indicatorColor: AdminDesignSystem.accentTeal,
-            indicatorWeight: 3,
-            labelStyle: AdminDesignSystem.bodyMedium.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-            unselectedLabelStyle: AdminDesignSystem.bodyMedium,
-            tabs: const [
-              Tab(text: 'Goals', icon: Icon(Icons.flag_outlined, size: 20)),
-              Tab(
-                text: 'General',
-                icon: Icon(Icons.account_balance_wallet_outlined, size: 20),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildGoalsTab() {
     return CustomScrollView(
       slivers: [

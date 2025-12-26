@@ -1,34 +1,26 @@
-// ==================== ANIMATED BALANCE CARD ====================
+// lib/screens/dashboard/tabs/tokens_balance_card.dart
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-
 import '../../../../core/theme/admin_design_system.dart';
 import '../../../../models/user_model.dart';
 
-class AnimatedBalanceCard extends StatefulWidget {
+class TokensBalanceCard extends StatefulWidget {
   final UserModel user;
-  final NumberFormat currencyFormatter;
-  final VoidCallback? onGoalsTapped;
-  final VoidCallback? onInvest;
-  final VoidCallback? onWithdraw;
-  final VoidCallback? onHistory;
+  final VoidCallback? onEarnTokens;
+  final VoidCallback? onConvertTokens;
 
-  const AnimatedBalanceCard({
+  const TokensBalanceCard({
     super.key,
     required this.user,
-    required this.currencyFormatter,
-    this.onGoalsTapped,
-    this.onInvest,
-    this.onWithdraw,
-    this.onHistory,
+    this.onEarnTokens,
+    this.onConvertTokens,
   });
 
   @override
-  State<AnimatedBalanceCard> createState() => _AnimatedBalanceCardState();
+  State<TokensBalanceCard> createState() => _TokensBalanceCardState();
 }
 
-class _AnimatedBalanceCardState extends State<AnimatedBalanceCard>
+class _TokensBalanceCardState extends State<TokensBalanceCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -68,7 +60,8 @@ class _AnimatedBalanceCardState extends State<AnimatedBalanceCard>
 
   @override
   Widget build(BuildContext context) {
-    final balance = widget.user.financialProfile.accountBalance;
+    final tokenCount = widget.user.financialProfile.tokenBalance;
+    // final tokenValue = tokenCount * 10;
 
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -78,8 +71,8 @@ class _AnimatedBalanceCardState extends State<AnimatedBalanceCard>
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AdminDesignSystem.accentTeal,
-                AdminDesignSystem.accentTeal.withAlpha(230),
+                const Color(0xff2B2A2A), // Purple
+                const Color(0xff2B2A2A).withAlpha(230),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -87,7 +80,7 @@ class _AnimatedBalanceCardState extends State<AnimatedBalanceCard>
             borderRadius: BorderRadius.circular(AdminDesignSystem.radius16),
             boxShadow: [
               BoxShadow(
-                color: AdminDesignSystem.accentTeal.withAlpha(38),
+                color: const Color(0xFF9B59B6).withAlpha(38),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -105,19 +98,19 @@ class _AnimatedBalanceCardState extends State<AnimatedBalanceCard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Total Balance',
+                          'Token Balance',
                           style: AdminDesignSystem.labelMedium.copyWith(
                             color: Colors.white.withAlpha(179),
                           ),
                         ),
                         const SizedBox(height: AdminDesignSystem.spacing8),
-                        TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0, end: balance),
+                        TweenAnimationBuilder<int>(
+                          tween: IntTween(begin: 0, end: tokenCount),
                           duration: const Duration(milliseconds: 1200),
                           curve: Curves.easeOutCubic,
                           builder: (context, value, child) {
                             return Text(
-                              widget.currencyFormatter.format(value),
+                              '$value',
                               style: AdminDesignSystem.displayLarge.copyWith(
                                 color: Colors.white,
                                 fontSize: 32,
@@ -125,30 +118,30 @@ class _AnimatedBalanceCardState extends State<AnimatedBalanceCard>
                             );
                           },
                         ),
-                        const SizedBox(height: AdminDesignSystem.spacing4),
-                        Text(
-                          'Welcome back, ${widget.user.firstName}',
-                          style: AdminDesignSystem.bodySmall.copyWith(
-                            color: Colors.white.withAlpha(153),
-                          ),
-                        ),
+                        // const SizedBox(height: AdminDesignSystem.spacing4),
+                        // Text(
+                        //   '≈ ₦${tokenValue.toStringAsFixed(0)} value',
+                        //   style: AdminDesignSystem.bodySmall.copyWith(
+                        //     color: Colors.white.withAlpha(153),
+                        //   ),
+                        // ),
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.all(AdminDesignSystem.spacing12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withAlpha(25),
-                      borderRadius: BorderRadius.circular(
-                        AdminDesignSystem.radius12,
-                      ),
-                    ),
-                    child: Icon(
-                      Icons.account_balance_wallet_outlined,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
+                  // Container(
+                  //   padding: const EdgeInsets.all(AdminDesignSystem.spacing12),
+                  //   decoration: BoxDecoration(
+                  //     color: Colors.white.withAlpha(25),
+                  //     borderRadius: BorderRadius.circular(
+                  //       AdminDesignSystem.radius12,
+                  //     ),
+                  //   ),
+                  //   child: const Icon(
+                  //     Icons.stars,
+                  //     color: Colors.white,
+                  //     size: 28,
+                  //   ),
+                  // ),
                 ],
               ),
               const SizedBox(height: AdminDesignSystem.spacing24),
@@ -156,31 +149,19 @@ class _AnimatedBalanceCardState extends State<AnimatedBalanceCard>
                 children: [
                   _AnimatedActionButton(
                     icon: Icons.add_circle_outline,
-                    label: 'Set Goal',
-                    onPressed: widget.onGoalsTapped,
+                    label: 'Earn Tokens',
+                    onPressed: widget.onEarnTokens,
                     delay: 200,
                   ),
-                  const SizedBox(width: AdminDesignSystem.spacing8),
-                  _AnimatedActionButton(
-                    icon: Icons.trending_up,
-                    label: 'Invest',
-                    onPressed: widget.onInvest,
-                    delay: 300,
-                  ),
-                  const SizedBox(width: AdminDesignSystem.spacing8),
-                  _AnimatedActionButton(
-                    icon: Icons.arrow_circle_down_outlined,
-                    label: 'Withdraw',
-                    onPressed: widget.onWithdraw,
-                    delay: 400,
-                  ),
-                  // const SizedBox(width: AdminDesignSystem.spacing8),
-                  _AnimatedActionButton(
-                    icon: Icons.receipt_long_outlined,
-                    label: 'History',
-                    onPressed: widget.onHistory,
-                    delay: 500,
-                  ),
+                  if (tokenCount > 0) ...[
+                    const SizedBox(width: AdminDesignSystem.spacing8),
+                    _AnimatedActionButton(
+                      icon: Icons.swap_horiz,
+                      label: 'Convert',
+                      onPressed: widget.onConvertTokens,
+                      delay: 300,
+                    ),
+                  ],
                 ],
               ),
             ],

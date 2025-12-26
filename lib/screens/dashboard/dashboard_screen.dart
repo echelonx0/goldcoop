@@ -14,10 +14,10 @@
 // import '../support/chat_screen_complete.dart';
 // import '../transactions/transactions_screen.dart';
 // import 'modals/withdrawal_modal.dart';
-// import 'tabs/home_tab.dart';
+// import 'tabs/home/home_tab.dart';
 // import 'tabs/savings_tab.dart';
 // import 'tabs/tokens_tab.dart';
-// import 'tabs/account_tab.dart';
+// import 'tabs/account/account_tab.dart';
 // import 'widgets/appbar.dart';
 // import 'widgets/bottom_nav.dart';
 // import 'widgets/dashboard_support_menu.dart';
@@ -33,6 +33,7 @@
 
 // class _DashboardScreenState extends State<DashboardScreen> {
 //   int _selectedTab = 0;
+//   late final PageController _pageController;
 //   late final FirestoreService _firestoreService;
 //   late final SupportService _supportService;
 //   late final WalletService _walletService;
@@ -40,9 +41,29 @@
 //   @override
 //   void initState() {
 //     super.initState();
+//     _pageController = PageController();
 //     _firestoreService = FirestoreService();
 //     _supportService = SupportService();
 //     _walletService = WalletService();
+//   }
+
+//   @override
+//   void dispose() {
+//     _pageController.dispose();
+//     super.dispose();
+//   }
+
+//   void _onTabChanged(int index) {
+//     setState(() => _selectedTab = index);
+//     _pageController.animateToPage(
+//       index,
+//       duration: const Duration(milliseconds: 300),
+//       curve: Curves.easeOutCubic,
+//     );
+//   }
+
+//   void _onPageChanged(int index) {
+//     setState(() => _selectedTab = index);
 //   }
 
 //   @override
@@ -70,50 +91,46 @@
 //                   },
 //                   onSettingsTap: () => _showSettingsMenu(uid, user),
 //                 ),
-//                 body: _buildBody(uid, user),
+//                 body: PageView(
+//                   controller: _pageController,
+//                   onPageChanged: _onPageChanged,
+//                   physics: const NeverScrollableScrollPhysics(),
+//                   children: [
+//                     HomeTab(
+//                       uid: uid,
+//                       onTapGoals: () => _onTabChanged(1),
+//                       onInvest: () {
+//                         Navigator.pushNamed(context, '/invest');
+//                       },
+//                       onWithdraw: () => _showWithdrawalModal(user),
+//                       onHistory: () {
+//                         Navigator.push(
+//                           context,
+//                           MaterialPageRoute(
+//                             builder: (context) => TransactionsScreen(uid: uid),
+//                           ),
+//                         );
+//                       },
+//                     ),
+//                     SavingsTab(uid: uid),
+//                     TokensTab(uid: uid),
+//                     AccountTab(
+//                       authProvider: context.read<AuthProvider>(),
+//                       onEditProfile: () {},
+//                       onChangePassword: () {},
+//                       onSignOut: () => _handleSignOut(),
+//                     ),
+//                   ],
+//                 ),
 //                 bottomNavigationBar: DashboardBottomNav(
 //                   currentIndex: _selectedTab,
-//                   onTabChanged: (index) {
-//                     setState(() => _selectedTab = index);
-//                   },
+//                   onTabChanged: _onTabChanged,
 //                 ),
 //               );
 //             },
 //           );
 //         },
 //       ),
-//     );
-//   }
-
-//   Widget _buildBody(String uid, UserModel? user) {
-//     return IndexedStack(
-//       index: _selectedTab,
-//       children: [
-//         HomeTab(
-//           uid: uid,
-//           onTapGoals: () => setState(() => _selectedTab = 1),
-//           onInvest: () {
-//             Navigator.pushNamed(context, '/invest');
-//           },
-//           onWithdraw: () => _showWithdrawalModal(user),
-//           onHistory: () {
-//             Navigator.push(
-//               context,
-//               MaterialPageRoute(
-//                 builder: (context) => TransactionsScreen(uid: uid),
-//               ),
-//             );
-//           },
-//         ),
-//         SavingsTab(uid: uid),
-//         TokensTab(uid: uid),
-//         AccountTab(
-//           authProvider: context.read<AuthProvider>(),
-//           onEditProfile: () {},
-//           onChangePassword: () {},
-//           onSignOut: () => _handleSignOut(),
-//         ),
-//       ],
 //     );
 //   }
 
@@ -355,6 +372,7 @@
 //     }
 //   }
 // }
+
 // lib/screens/dashboard/dashboard_screen.dart
 
 import 'package:flutter/material.dart';
@@ -390,7 +408,6 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedTab = 0;
-  late final PageController _pageController;
   late final FirestoreService _firestoreService;
   late final SupportService _supportService;
   late final WalletService _walletService;
@@ -398,28 +415,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
     _firestoreService = FirestoreService();
     _supportService = SupportService();
     _walletService = WalletService();
   }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
   void _onTabChanged(int index) {
-    setState(() => _selectedTab = index);
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
-    );
-  }
-
-  void _onPageChanged(int index) {
     setState(() => _selectedTab = index);
   }
 
@@ -448,36 +449,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   },
                   onSettingsTap: () => _showSettingsMenu(uid, user),
                 ),
-                body: PageView(
-                  controller: _pageController,
-                  onPageChanged: _onPageChanged,
-                  children: [
-                    HomeTab(
-                      uid: uid,
-                      onTapGoals: () => _onTabChanged(1),
-                      onInvest: () {
-                        Navigator.pushNamed(context, '/invest');
-                      },
-                      onWithdraw: () => _showWithdrawalModal(user),
-                      onHistory: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => TransactionsScreen(uid: uid),
-                          ),
-                        );
-                      },
-                    ),
-                    SavingsTab(uid: uid),
-                    TokensTab(uid: uid),
-                    AccountTab(
-                      authProvider: context.read<AuthProvider>(),
-                      onEditProfile: () {},
-                      onChangePassword: () {},
-                      onSignOut: () => _handleSignOut(),
-                    ),
-                  ],
-                ),
+                body: _buildBody(uid, user),
                 bottomNavigationBar: DashboardBottomNav(
                   currentIndex: _selectedTab,
                   onTabChanged: _onTabChanged,
@@ -488,6 +460,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
         },
       ),
     );
+  }
+
+  Widget _buildBody(String uid, UserModel? user) {
+    switch (_selectedTab) {
+      case 0:
+        return HomeTab(
+          uid: uid,
+          onTapGoals: () => _onTabChanged(1),
+          onInvest: () {
+            Navigator.pushNamed(context, '/invest');
+          },
+          onWithdraw: () => _showWithdrawalModal(user),
+          onHistory: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TransactionsScreen(uid: uid),
+              ),
+            );
+          },
+        );
+      case 1:
+        return SavingsTab(uid: uid);
+      case 2:
+        return TokensTab(uid: uid);
+      case 3:
+        return AccountTab(
+          authProvider: context.read<AuthProvider>(),
+          onEditProfile: () {},
+          onChangePassword: () {},
+          onSignOut: () => _handleSignOut(),
+        );
+      default:
+        return HomeTab(uid: uid);
+    }
   }
 
   // ==================== WITHDRAWAL ====================
