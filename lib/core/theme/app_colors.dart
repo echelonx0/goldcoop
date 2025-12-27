@@ -38,6 +38,19 @@ class AppColors {
   static const Color info = Color(0xFF3498DB);
   static const Color disabled = Color(0xFFBDBDBD);
 
+  // Add these to lib/core/theme/app_colors.dart
+
+  // ==================== ADD TO AppColors CLASS ====================
+
+  // Background colors
+  static const Color background = Color(0xFFF5F7FA); // Light gray background
+
+  // Divider
+  static const Color divider = Color(0xFFE5E7EB);
+
+  // Success (alias for consistency)
+  static const Color successGreen = Color(0xFF10B981);
+
   // Opacity utilities
   static Color withOpacityFromHex(String hexColor, double opacity) {
     final buffer = StringBuffer();
@@ -59,6 +72,17 @@ class AppTextTheme {
     fontWeight: FontWeight.w700,
     height: 56 / 48,
     letterSpacing: -0.02,
+    fontFamily: fontFamily,
+  );
+  // Add these to lib/core/theme/app_text_theme.dart
+
+  // ==================== ADD TO AppTextTheme CLASS ====================
+
+  static const TextStyle bodyMedium = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    height: 20 / 14,
+    letterSpacing: 0,
     fontFamily: fontFamily,
   );
 

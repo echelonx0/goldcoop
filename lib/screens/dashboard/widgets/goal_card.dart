@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/admin_design_system.dart';
 import '../../../models/goals_model.dart';
 import '../tabs/savings/add_to_goal_form.dart';
-import '../tabs/savings/goal_detail_sheet.dart';
+import '../tabs/savings/goal-detail/goal_detail_sheet.dart';
 
 class AnimatedGoalCard extends StatefulWidget {
   final GoalModel goal;

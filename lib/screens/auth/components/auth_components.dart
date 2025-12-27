@@ -39,10 +39,11 @@ class AuthHero extends StatelessWidget {
               ),
               borderRadius: AppBorderRadius.mediumRadius,
             ),
-            child: Icon(
-              icon,
-              size: 32,
-              color: iconColor ?? AppColors.primaryOrange,
+            child: Image.asset(
+              'assets/icon.png',
+              width: 32,
+              height: 32,
+              fit: BoxFit.contain,
             ),
           ),
         ),

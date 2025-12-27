@@ -1,4 +1,5 @@
 // lib/screens/dashboard/widgets/dashboard_my_tickets.dart
+// FIXED VERSION - Safe ticketId handling
 
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
@@ -117,6 +118,15 @@ class TicketTile extends StatelessWidget {
     this.onTap,
   });
 
+  // Helper to safely get ticket ID display
+  String _getTicketIdDisplay() {
+    if (ticket.ticketId.isEmpty) return 'No ID';
+    if (ticket.ticketId.length >= 8) {
+      return ticket.ticketId.substring(0, 8);
+    }
+    return ticket.ticketId;
+  }
+
   @override
   Widget build(BuildContext context) {
     final statusColor = _getStatusColor(ticket.status);
@@ -124,19 +134,10 @@ class TicketTile extends StatelessWidget {
     return GestureDetector(
       onTap: () async {
         try {
-          final conversations = await supportService.getUserConversations(
-            userId,
+          // FIXED: Use the dedicated method to get conversation by ticket ID
+          final conversation = await supportService.getConversationByTicketId(
+            ticket.ticketId,
           );
-
-          // Find conversation for this ticket
-          SupportConversation? conversation;
-          try {
-            conversation = conversations.firstWhere(
-              (c) => c.relatedTicketId == ticket.ticketId,
-            );
-          } catch (e) {
-            conversation = null;
-          }
 
           if (!context.mounted) return;
 
@@ -158,7 +159,7 @@ class TicketTile extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (_) => ChatScreen(
-                conversationId: conversation!.conversationId,
+                conversationId: conversation.conversationId,
                 userId: userId,
                 userName: 'User',
                 userAvatar: '',
@@ -194,7 +195,7 @@ class TicketTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Ticket #${ticket.ticketId.substring(0, 8)}',
+                        'Ticket #${_getTicketIdDisplay()}',
                         style: AppTextTheme.bodyRegular.copyWith(
                           color: AppColors.deepNavy,
                           fontWeight: FontWeight.w600,

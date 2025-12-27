@@ -53,6 +53,10 @@ dependencies:
   fl_chart: ^0.68.0
   delayed_display: ^2.0.0
   url_launcher: ^6.3.2
+  path: ^1.8.4
+  file_picker: ^10.3.8
+  timeago: ^3.7.0
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:

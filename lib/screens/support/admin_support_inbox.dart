@@ -1,4 +1,5 @@
 // lib/screens/admin/support/admin_support_inbox.dart
+// FIXED VERSION - Proper conversation filtering by status
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -26,7 +27,7 @@ class AdminSupportInbox extends StatefulWidget {
 
 class _AdminSupportInboxState extends State<AdminSupportInbox> {
   late final AdminSupportService _adminSupportService;
-  String _filterStatus = 'all'; // all, open, assigned, inProgress, waiting
+  String _filterStatus = 'all';
 
   @override
   void initState() {
@@ -85,7 +86,6 @@ class _AdminSupportInboxState extends State<AdminSupportInbox> {
 
                 return GestureDetector(
                   onTap: () {
-                    // Refresh
                     setState(() {});
                   },
                   child: Container(
@@ -176,12 +176,8 @@ class _AdminSupportInboxState extends State<AdminSupportInbox> {
   }
 
   Widget _buildConversationsList() {
-    final stream = _filterStatus == 'all'
-        ? _adminSupportService.getActiveConversationsStream()
-        : _adminSupportService.getActiveConversationsStream();
-
     return StreamBuilder<List<SupportConversation>>(
-      stream: stream,
+      stream: _adminSupportService.getActiveConversationsStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
@@ -191,18 +187,68 @@ class _AdminSupportInboxState extends State<AdminSupportInbox> {
           );
         }
 
+        if (snapshot.hasError) {
+          print(snapshot.error);
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 48,
+                  color: AdminDesignSystem.statusError,
+                ),
+                const SizedBox(height: AdminDesignSystem.spacing16),
+                Text(
+                  'Error loading conversations',
+                  style: AdminDesignSystem.bodyMedium.copyWith(
+                    color: AdminDesignSystem.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AdminDesignSystem.spacing8),
+                Text(
+                  snapshot.error.toString(),
+                  style: AdminDesignSystem.bodySmall.copyWith(
+                    color: AdminDesignSystem.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          );
+        }
+
         var conversations = snapshot.data ?? [];
 
-        // Filter by status
+        // FIXED: Properly filter conversations by status
         if (_filterStatus != 'all') {
-          conversations = conversations
-              .where((c) => c.status == _filterStatus)
-              .toList();
+          conversations = conversations.where((c) {
+            // Map filter status to conversation status
+            switch (_filterStatus) {
+              case 'open':
+                return c.status == ConversationStatus.open;
+              case 'assigned':
+                return c.assignedToAdminId != null &&
+                    c.assignedToAdminId!.isNotEmpty &&
+                    c.status == ConversationStatus.open;
+              case 'inProgress':
+                return c.status == ConversationStatus.open &&
+                    c.lastMessageAt != null;
+              case 'waiting':
+                // Waiting = conversations with unread admin messages
+                return c.unreadCount > 0;
+              default:
+                return true;
+            }
+          }).toList();
         }
 
         if (conversations.isEmpty) {
           return _buildEmptyState();
         }
+
+        // Sort: newest first
+        conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
         return ListView.separated(
           padding: const EdgeInsets.all(AdminDesignSystem.spacing12),
@@ -223,7 +269,7 @@ class _AdminSupportInboxState extends State<AdminSupportInbox> {
                         adminId: widget.adminId,
                         adminName: widget.adminName,
                         adminAvatar: widget.adminAvatar,
-                        relatedTicket: null, // Will fetch in AdminChatScreen
+                        relatedTicket: null,
                       ),
                     ),
                   );
@@ -248,7 +294,9 @@ class _AdminSupportInboxState extends State<AdminSupportInbox> {
           ),
           const SizedBox(height: AdminDesignSystem.spacing16),
           Text(
-            'No conversations',
+            _filterStatus == 'all'
+                ? 'No conversations'
+                : 'No $_filterStatus conversations',
             style: AdminDesignSystem.bodyMedium.copyWith(
               fontWeight: FontWeight.w600,
               color: AdminDesignSystem.textPrimary,
@@ -256,7 +304,9 @@ class _AdminSupportInboxState extends State<AdminSupportInbox> {
           ),
           const SizedBox(height: AdminDesignSystem.spacing8),
           Text(
-            'All support conversations appear here',
+            _filterStatus == 'all'
+                ? 'All support conversations appear here'
+                : 'Try changing the filter to see more conversations',
             style: AdminDesignSystem.bodySmall.copyWith(
               color: AdminDesignSystem.textSecondary,
             ),
@@ -277,9 +327,8 @@ class _ConversationListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _getStatusColor(conversation.status.toString());
-    final isUnread =
-        conversation.status == 'open' || conversation.status == 'waiting';
+    final statusColor = _getStatusColor(conversation.status);
+    final isUnread = conversation.unreadCount > 0;
 
     return GestureDetector(
       onTap: onTap,
@@ -336,7 +385,7 @@ class _ConversationListItem extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'ID: ${conversation.conversationId.substring(0, 8)}',
+                        'ID: ${_getIdDisplay(conversation.conversationId)}',
                         style: AdminDesignSystem.labelSmall.copyWith(
                           color: AdminDesignSystem.textTertiary,
                           fontFamily: 'monospace',
@@ -355,7 +404,7 @@ class _ConversationListItem extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    conversation.status.toString().capitalize(),
+                    conversation.status.name.capitalize(),
                     style: AdminDesignSystem.labelSmall.copyWith(
                       color: statusColor,
                       fontWeight: FontWeight.w600,
@@ -372,7 +421,7 @@ class _ConversationListItem extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'User: ${conversation.userId.substring(0, 8)}',
+                    'User: ${_getIdDisplay(conversation.userId)}',
                     style: AdminDesignSystem.labelSmall.copyWith(
                       color: AdminDesignSystem.textSecondary,
                     ),
@@ -417,20 +466,23 @@ class _ConversationListItem extends StatelessWidget {
     );
   }
 
-  Color _getStatusColor(String status) {
+  // Helper to safely display ID
+  String _getIdDisplay(String id) {
+    if (id.isEmpty) return 'No ID';
+    if (id.length >= 8) return id.substring(0, 8);
+    return id;
+  }
+
+  Color _getStatusColor(ConversationStatus status) {
     switch (status) {
-      case 'open':
+      case ConversationStatus.open:
         return AdminDesignSystem.statusPending;
-      case 'assigned':
-        return AdminDesignSystem.accentTeal;
-      case 'inProgress':
-        return const Color(0xFFF39C12);
-      case 'waiting':
-        return const Color(0xFFF39C12);
-      case 'closed':
+      case ConversationStatus.closed:
         return AdminDesignSystem.textSecondary;
-      default:
-        return AdminDesignSystem.textSecondary;
+      case ConversationStatus.assigned:
+        return AdminDesignSystem.statusInactive;
+      case ConversationStatus.inProgress:
+        return AdminDesignSystem.statusActive;
     }
   }
 

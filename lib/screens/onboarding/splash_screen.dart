@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:delayed_display/delayed_display.dart';
 import '../../core/theme/app_colors.dart';
+import '../../services/onboarding_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -15,11 +16,21 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/onboarding');
-      }
-    });
+    _checkOnboardingStatus();
+  }
+
+  Future<void> _checkOnboardingStatus() async {
+    await Future.delayed(const Duration(seconds: 3));
+
+    if (!mounted) return;
+
+    final hasSeenOnboarding = await OnboardingService.hasSeenOnboarding();
+
+    if (mounted) {
+      Navigator.of(
+        context,
+      ).pushReplacementNamed(hasSeenOnboarding ? '/login' : '/onboarding');
+    }
   }
 
   @override
@@ -32,9 +43,7 @@ class _SplashScreenState extends State<SplashScreen> {
           slidingBeginOffset: const Offset(0.0, 0.2),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              //             // Logo placeholder
               Container(
                 width: 100,
                 height: 100,
@@ -54,23 +63,19 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              Center(
-                child: Text(
-                  'Gold Savings',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0F1B3C),
-                  ),
+              Text(
+                'Gold Savings',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF0F1B3C),
                 ),
               ),
               const SizedBox(height: 16),
-              Center(
-                child: Text(
-                  'Cooperative',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0F1B3C),
-                  ),
+              Text(
+                'Cooperative',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF0F1B3C),
                 ),
               ),
               const SizedBox(height: 48),

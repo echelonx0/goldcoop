@@ -953,4 +953,21 @@ class FirestoreService {
       return false;
     }
   }
+
+  /// Update user's phone number
+  Future<bool> updateUserPhone({
+    required String uid,
+    required String phoneNumber,
+  }) async {
+    try {
+      await _firestore.collection('clients').doc(uid).update({
+        'phoneNumber': phoneNumber,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      return true;
+    } catch (e) {
+      log('Error updating phone number: $e');
+      return false;
+    }
+  }
 }

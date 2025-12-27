@@ -1,7 +1,7 @@
 // lib/config/app_router.dart
 
 import 'package:flutter/material.dart';
-import 'package:gsa/screens/admin/admin_dashboard.dart';
+import 'package:gsa/screens/admin/dashboard/admin_dashboard.dart';
 import 'package:gsa/screens/auth/login_screen.dart';
 import 'package:gsa/screens/auth/signup_screen.dart';
 import 'package:gsa/screens/auth/password_reset_screen.dart';

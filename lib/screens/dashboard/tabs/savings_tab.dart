@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/admin_design_system.dart';
 import '../../../models/goals_model.dart';
 import '../../../services/firestore_service.dart';
+import 'savings/goal-detail/goal_detail_sheet.dart';
 import 'savings/goal_creation_form.dart';
 import 'savings/add_to_goal_form.dart';
 import 'savings/goal_detail_sheet.dart';

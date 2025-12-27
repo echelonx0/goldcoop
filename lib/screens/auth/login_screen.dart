@@ -7,6 +7,7 @@ import '../../components/base/app_button.dart';
 import '../../components/base/app_text_field.dart';
 import '../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/onboarding_service.dart';
 import 'components/auth_components.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -39,6 +40,101 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
     super.dispose();
+  }
+
+  void _showOnboardingOption() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.backgroundWhite,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.borderLight,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Icon(Icons.info_outline, size: 48, color: AppColors.primaryOrange),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'View Onboarding?',
+              style: AppTextTheme.bodySmall.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'See the app tour again to learn about features.',
+              style: AppTextTheme.bodyRegular.copyWith(
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      side: BorderSide(color: AppColors.borderLight),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      'Cancel',
+                      style: AppTextTheme.bodyRegular.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      await OnboardingService.resetOnboarding();
+                      if (context.mounted) {
+                        Navigator.of(
+                          context,
+                        ).pushReplacementNamed('/onboarding');
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryOrange,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      'View Tour',
+                      style: AppTextTheme.bodySmall.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _handleLogin() {
@@ -220,11 +316,27 @@ class _LoginScreenState extends State<LoginScreen> {
                           // Sign up link
                           DelayedDisplay(
                             delay: const Duration(milliseconds: 800),
-                            child: AuthBottomLink(
-                              text: "Don't have an account? ",
-                              linkText: 'Sign Up',
-                              onTap: () =>
-                                  Navigator.of(context).pushNamed('/signup'),
+                            child: Column(
+                              children: [
+                                AuthBottomLink(
+                                  text: "Don't have an account? ",
+                                  linkText: 'Sign Up',
+                                  onTap: () => Navigator.of(
+                                    context,
+                                  ).pushNamed('/signup'),
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                GestureDetector(
+                                  onTap: _showOnboardingOption,
+                                  child: Text(
+                                    'New here? View app tour',
+                                    style: AppTextTheme.bodySmall.copyWith(
+                                      color: AppColors.textTertiary,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: AppSpacing.xxl),

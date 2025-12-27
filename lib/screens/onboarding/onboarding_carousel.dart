@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:delayed_display/delayed_display.dart';
 import '../../core/theme/app_colors.dart';
+import '../../services/onboarding_service.dart';
 import 'auth_options_modal.dart';
 
 class OnboardingCarousel extends StatefulWidget {
@@ -278,6 +279,8 @@ class _OnboardingCarouselState extends State<OnboardingCarousel> {
                                         curve: Curves.easeInOut,
                                       );
                                     } else {
+                                      // Mark onboarding as complete before showing auth modal
+                                      OnboardingService.completeOnboarding();
                                       showAuthOptionsModal(context);
                                     }
                                   },

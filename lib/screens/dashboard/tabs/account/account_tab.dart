@@ -1,5 +1,4 @@
 // lib/screens/dashboard/tabs/account/account_tab.dart
-// Account settings tab - refactored with extracted components
 
 import 'package:flutter/material.dart';
 import '../../../../components/base/app_card.dart';
@@ -10,10 +9,11 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../models/user_model.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../services/firestore_service.dart';
-import '../../../admin/admin_dashboard.dart';
+import '../../../admin/dashboard/admin_dashboard.dart';
 
 import 'change_password_screen.dart';
 import 'controllers/account_tab_controller.dart';
+import 'edit-profile/edit_profile_screen.dart';
 import 'notification_settings_screen.dart';
 import 'security_settings_screen.dart';
 import 'widgets/settings_list_tile.dart';
@@ -53,7 +53,7 @@ class AccountTab extends StatelessWidget {
             children: [
               _buildHeader(),
               const SizedBox(height: AppSpacing.lg),
-              _buildProfileCard(user),
+              _buildProfileCard(user, context),
               const SizedBox(height: AppSpacing.lg),
               _buildAccountInfo(user),
               const SizedBox(height: AppSpacing.lg),
@@ -91,7 +91,7 @@ class AccountTab extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileCard(UserModel? user) {
+  Widget _buildProfileCard(UserModel? user, BuildContext context) {
     return StandardCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,7 +139,10 @@ class AccountTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          PrimaryButton(label: 'Edit Profile', onPressed: onEditProfile),
+          PrimaryButton(
+            label: 'Edit Profile',
+            onPressed: () => _navigateToEditProfile(context),
+          ),
         ],
       ),
     );
@@ -319,23 +322,6 @@ class AccountTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Danger Zone',
-            style: AppTextTheme.heading2.copyWith(
-              color: AppColors.warmRed,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'Once you sign out, you\'ll need to sign in again to access your account.',
-            style: AppTextTheme.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -343,8 +329,8 @@ class AccountTab extends StatelessWidget {
               icon: const Icon(Icons.logout, size: 18),
               label: const Text('Sign Out'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.warmRed,
-                side: BorderSide(color: AppColors.warmRed),
+                foregroundColor: AppColors.primaryOrangeActive,
+                side: BorderSide(color: AppColors.softAmber),
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               ),
             ),
@@ -355,6 +341,14 @@ class AccountTab extends StatelessWidget {
   }
 
   // ==================== NAVIGATION ====================
+  void _navigateToEditProfile(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditProfileScreen(authProvider: authProvider),
+      ),
+    );
+  }
 
   void _navigateToAdmin(BuildContext context) {
     Navigator.push(
