@@ -134,7 +134,7 @@ class DepositInstructionsModal extends StatelessWidget {
                 children: [
                   // Bank name
                   Text(
-                    'GOLD Savings Co-operative',
+                    'ZENITH BANK PLC',
                     style: AppTextTheme.bodySmall.copyWith(
                       color: Colors.white.withAlpha(204),
                     ),
@@ -200,7 +200,7 @@ class DepositInstructionsModal extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    'gold savings and investment cooperative',
+                    'GOLD SAVINGS & INVESTMENT COOPERATIVE',
                     style: AppTextTheme.bodyRegular.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,

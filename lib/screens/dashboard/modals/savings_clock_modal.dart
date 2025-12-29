@@ -1,5 +1,3 @@
-// // lib/screens/dashboard/modals/savings_clock_modal.dart
-
 // import 'dart:math' as math;
 // import 'package:flutter/material.dart';
 // import 'package:intl/intl.dart';
@@ -26,7 +24,6 @@
 //     with TickerProviderStateMixin {
 //   late AnimationController _entryController;
 //   late AnimationController _pulseController;
-//   late AnimationController _rotationController;
 //   late Animation<double> _scaleAnimation;
 //   late Animation<double> _fadeAnimation;
 
@@ -41,7 +38,6 @@
 //   void initState() {
 //     super.initState();
 
-//     // Entry animation
 //     _entryController = AnimationController(
 //       duration: const Duration(milliseconds: 800),
 //       vsync: this,
@@ -56,27 +52,18 @@
 //       end: 1.0,
 //     ).animate(CurvedAnimation(parent: _entryController, curve: Curves.easeOut));
 
-//     // Pulse animation for the glow effect
 //     _pulseController = AnimationController(
 //       duration: const Duration(milliseconds: 2000),
 //       vsync: this,
 //     )..repeat(reverse: true);
 
-//     // Subtle rotation for the clock hand
-//     _rotationController = AnimationController(
-//       duration: const Duration(milliseconds: 1500),
-//       vsync: this,
-//     );
-
 //     _entryController.forward();
-//     _rotationController.forward();
 //   }
 
 //   @override
 //   void dispose() {
 //     _entryController.dispose();
 //     _pulseController.dispose();
-//     _rotationController.dispose();
 //     super.dispose();
 //   }
 
@@ -175,7 +162,6 @@
 
 //   Widget _buildClockContent() {
 //     final goal = _selectedGoal!;
-//     final clockData = _calculateClockData(goal);
 
 //     return FadeTransition(
 //       opacity: _fadeAnimation,
@@ -187,25 +173,40 @@
 //           ),
 //           child: Column(
 //             children: [
-//               // Goal selector (if multiple goals)
 //               if (widget.goals.length > 1) ...[
 //                 _buildGoalSelector(),
 //                 const SizedBox(height: AdminDesignSystem.spacing24),
 //               ],
 
-//               // The Clock
-//               _buildSavingsClock(goal, clockData),
-//               const SizedBox(height: AdminDesignSystem.spacing24),
+//               // REFACTORED: Dedicated clock widget with its own state
+//               AnimatedSwitcher(
+//                 duration: const Duration(milliseconds: 600),
+//                 switchInCurve: Curves.easeOutCubic,
+//                 switchOutCurve: Curves.easeInCubic,
+//                 transitionBuilder: (child, animation) {
+//                   return FadeTransition(
+//                     opacity: animation,
+//                     child: ScaleTransition(
+//                       scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+//                         CurvedAnimation(
+//                           parent: animation,
+//                           curve: Curves.easeOutBack,
+//                         ),
+//                       ),
+//                       child: child,
+//                     ),
+//                   );
+//                 },
+//                 child: _ClockDisplay(
+//                   key: ValueKey(goal.goalId), // Unique key per goal
+//                   goal: goal,
+//                   pulseAnimation: _pulseController,
+//                 ),
+//               ),
 
-//               // Status insight card
-//               _buildInsightCard(clockData),
 //               const SizedBox(height: AdminDesignSystem.spacing16),
-
-//               // Metrics row
-//               _buildMetricsRow(goal, clockData),
+//               _buildMetricsRow(goal),
 //               const SizedBox(height: AdminDesignSystem.spacing24),
-
-//               // Action button
 //               _buildActionButton(goal),
 //               const SizedBox(height: AdminDesignSystem.spacing32),
 //             ],
@@ -226,11 +227,13 @@
 //           final isSelected = index == _selectedGoalIndex;
 
 //           return Padding(
-//             padding: EdgeInsets.only(right: AdminDesignSystem.spacing8),
+//             padding: const EdgeInsets.only(right: AdminDesignSystem.spacing8),
 //             child: Material(
 //               color: Colors.transparent,
 //               child: InkWell(
-//                 onTap: () => setState(() => _selectedGoalIndex = index),
+//                 onTap: () {
+//                   setState(() => _selectedGoalIndex = index);
+//                 },
 //                 borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
 //                 child: AnimatedContainer(
 //                   duration: const Duration(milliseconds: 200),
@@ -284,146 +287,7 @@
 //     );
 //   }
 
-//   Widget _buildSavingsClock(GoalModel goal, _ClockData clockData) {
-//     return AnimatedBuilder(
-//       animation: _pulseController,
-//       builder: (context, child) {
-//         return Container(
-//           width: 280,
-//           height: 280,
-//           decoration: BoxDecoration(
-//             shape: BoxShape.circle,
-//             boxShadow: [
-//               // Outer glow based on status
-//               BoxShadow(
-//                 color: clockData.statusColor.withAlpha(
-//                   (38 + (_pulseController.value * 25)).toInt(),
-//                 ),
-//                 blurRadius: 40 + (_pulseController.value * 20),
-//                 spreadRadius: 5,
-//               ),
-//             ],
-//           ),
-//           child: CustomPaint(
-//             painter: _SavingsClockPainter(
-//               progressPercent: clockData.savingsProgress,
-//               timePercent: clockData.timeProgress,
-//               statusColor: clockData.statusColor,
-//               animationValue: _rotationController.value,
-//             ),
-//             child: Center(
-//               child: Column(
-//                 mainAxisSize: MainAxisSize.min,
-//                 children: [
-//                   // Status emoji
-//                   TweenAnimationBuilder<double>(
-//                     tween: Tween(begin: 0, end: 1),
-//                     duration: const Duration(milliseconds: 600),
-//                     curve: Curves.elasticOut,
-//                     builder: (context, value, child) {
-//                       return Transform.scale(
-//                         scale: value,
-//                         child: Text(
-//                           clockData.statusEmoji,
-//                           style: const TextStyle(fontSize: 36),
-//                         ),
-//                       );
-//                     },
-//                   ),
-//                   const SizedBox(height: AdminDesignSystem.spacing8),
-
-//                   // Progress percentage
-//                   TweenAnimationBuilder<double>(
-//                     tween: Tween(
-//                       begin: 0,
-//                       end: clockData.savingsProgress * 100,
-//                     ),
-//                     duration: const Duration(milliseconds: 1200),
-//                     curve: Curves.easeOutCubic,
-//                     builder: (context, value, child) {
-//                       return Text(
-//                         '${value.toStringAsFixed(0)}%',
-//                         style: AdminDesignSystem.displayLarge.copyWith(
-//                           color: AdminDesignSystem.primaryNavy,
-//                           fontSize: 42,
-//                           fontWeight: FontWeight.w800,
-//                         ),
-//                       );
-//                     },
-//                   ),
-//                   Text(
-//                     'saved',
-//                     style: AdminDesignSystem.labelMedium.copyWith(
-//                       color: AdminDesignSystem.textSecondary,
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ),
-//           ),
-//         );
-//       },
-//     );
-//   }
-
-//   Widget _buildInsightCard(_ClockData clockData) {
-//     return Container(
-//       width: double.infinity,
-//       padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
-//       decoration: BoxDecoration(
-//         gradient: LinearGradient(
-//           colors: [
-//             clockData.statusColor.withAlpha(26),
-//             clockData.statusColor.withAlpha(13),
-//           ],
-//           begin: Alignment.topLeft,
-//           end: Alignment.bottomRight,
-//         ),
-//         borderRadius: BorderRadius.circular(AdminDesignSystem.radius16),
-//         border: Border.all(color: clockData.statusColor.withAlpha(51)),
-//       ),
-//       child: Row(
-//         children: [
-//           Container(
-//             padding: const EdgeInsets.all(AdminDesignSystem.spacing12),
-//             decoration: BoxDecoration(
-//               color: clockData.statusColor.withAlpha(38),
-//               borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
-//             ),
-//             child: Icon(
-//               clockData.statusIcon,
-//               color: clockData.statusColor,
-//               size: 24,
-//             ),
-//           ),
-//           const SizedBox(width: AdminDesignSystem.spacing12),
-//           Expanded(
-//             child: Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 Text(
-//                   clockData.statusTitle,
-//                   style: AdminDesignSystem.bodyLarge.copyWith(
-//                     fontWeight: FontWeight.w600,
-//                     color: AdminDesignSystem.primaryNavy,
-//                   ),
-//                 ),
-//                 const SizedBox(height: 2),
-//                 Text(
-//                   clockData.statusMessage,
-//                   style: AdminDesignSystem.bodySmall.copyWith(
-//                     color: AdminDesignSystem.textSecondary,
-//                   ),
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildMetricsRow(GoalModel goal, _ClockData clockData) {
+//   Widget _buildMetricsRow(GoalModel goal) {
 //     return Row(
 //       children: [
 //         Expanded(
@@ -592,73 +456,6 @@
 //     );
 //   }
 
-//   _ClockData _calculateClockData(GoalModel goal) {
-//     // Calculate savings progress (0 to 1)
-//     final savingsProgress = (goal.currentAmount / goal.targetAmount).clamp(
-//       0.0,
-//       1.0,
-//     );
-
-//     // Calculate time progress (0 to 1)
-//     final totalDuration = goal.targetDate.difference(goal.createdAt).inDays;
-//     final elapsedDuration = DateTime.now().difference(goal.createdAt).inDays;
-//     final timeProgress = totalDuration > 0
-//         ? (elapsedDuration / totalDuration).clamp(0.0, 1.0)
-//         : 1.0;
-
-//     // Determine status
-//     final difference = savingsProgress - timeProgress;
-//     final daysRemaining = goal.daysRemaining;
-
-//     if (savingsProgress >= 1.0) {
-//       return _ClockData(
-//         savingsProgress: savingsProgress,
-//         timeProgress: timeProgress,
-//         statusColor: AdminDesignSystem.statusActive,
-//         statusIcon: Icons.celebration,
-//         statusEmoji: '🎉',
-//         statusTitle: 'Goal Completed!',
-//         statusMessage: 'Congratulations! You\'ve reached your target.',
-//       );
-//     } else if (difference > 0.1) {
-//       // Ahead of schedule
-//       final daysAhead = ((difference) * totalDuration).round();
-//       return _ClockData(
-//         savingsProgress: savingsProgress,
-//         timeProgress: timeProgress,
-//         statusColor: AdminDesignSystem.statusActive,
-//         statusIcon: Icons.rocket_launch,
-//         statusEmoji: '🚀',
-//         statusTitle: '$daysAhead days ahead!',
-//         statusMessage: 'You\'re saving faster than planned. Keep it up!',
-//       );
-//     } else if (difference > -0.1) {
-//       // On track
-//       return _ClockData(
-//         savingsProgress: savingsProgress,
-//         timeProgress: timeProgress,
-//         statusColor: AdminDesignSystem.accentTeal,
-//         statusIcon: Icons.check_circle_outline,
-//         statusEmoji: '✨',
-//         statusTitle: 'On Track',
-//         statusMessage: '$daysRemaining days left. You\'re doing great!',
-//       );
-//     } else {
-//       // Behind schedule
-//       final weeklyNeeded = goal.remainingAmount / (daysRemaining / 7);
-//       return _ClockData(
-//         savingsProgress: savingsProgress,
-//         timeProgress: timeProgress,
-//         statusColor: AdminDesignSystem.statusPending,
-//         statusIcon: Icons.speed,
-//         statusEmoji: '⏰',
-//         statusTitle: 'Time to catch up',
-//         statusMessage:
-//             'Save ${_currencyFormatter.format(weeklyNeeded)}/week to reach your goal.',
-//       );
-//     }
-//   }
-
 //   IconData _getCategoryIcon(GoalCategory category) {
 //     switch (category) {
 //       case GoalCategory.vacation:
@@ -685,6 +482,272 @@
 //   }
 // }
 
+// // ==================== DEDICATED CLOCK DISPLAY WIDGET ====================
+
+// class _ClockDisplay extends StatefulWidget {
+//   final GoalModel goal;
+//   final Animation<double> pulseAnimation;
+
+//   const _ClockDisplay({
+//     super.key,
+//     required this.goal,
+//     required this.pulseAnimation,
+//   });
+
+//   @override
+//   State<_ClockDisplay> createState() => _ClockDisplayState();
+// }
+
+// class _ClockDisplayState extends State<_ClockDisplay>
+//     with SingleTickerProviderStateMixin {
+//   late AnimationController _rotationController;
+//   late _ClockData _clockData;
+
+//   final _currencyFormatter = NumberFormat.currency(
+//     symbol: '₦',
+//     decimalDigits: 0,
+//   );
+
+//   @override
+//   void initState() {
+//     super.initState();
+
+//     _clockData = _calculateClockData(widget.goal);
+
+//     _rotationController = AnimationController(
+//       duration: const Duration(milliseconds: 1500),
+//       vsync: this,
+//     );
+
+//     _rotationController.forward();
+
+//     // Debug print
+//     debugPrint('Clock Display Init - ${widget.goal.title}');
+//     debugPrint('  Current: ${widget.goal.currentAmount}');
+//     debugPrint('  Target: ${widget.goal.targetAmount}');
+//     debugPrint(
+//       '  Progress: ${(_clockData.savingsProgress * 100).toStringAsFixed(2)}%',
+//     );
+//   }
+
+//   @override
+//   void dispose() {
+//     _rotationController.dispose();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Column(
+//       children: [
+//         _buildSavingsClock(),
+//         const SizedBox(height: AdminDesignSystem.spacing24),
+//         _buildInsightCard(),
+//       ],
+//     );
+//   }
+
+//   Widget _buildSavingsClock() {
+//     return AnimatedBuilder(
+//       animation: widget.pulseAnimation,
+//       builder: (context, child) {
+//         return Container(
+//           width: 280,
+//           height: 280,
+//           decoration: BoxDecoration(
+//             shape: BoxShape.circle,
+//             boxShadow: [
+//               BoxShadow(
+//                 color: _clockData.statusColor.withAlpha(
+//                   (38 + (widget.pulseAnimation.value * 25)).toInt(),
+//                 ),
+//                 blurRadius: 40 + (widget.pulseAnimation.value * 20),
+//                 spreadRadius: 5,
+//               ),
+//             ],
+//           ),
+//           child: CustomPaint(
+//             painter: _SavingsClockPainter(
+//               progressPercent: _clockData.savingsProgress,
+//               timePercent: _clockData.timeProgress,
+//               statusColor: _clockData.statusColor,
+//               animationValue: _rotationController.value,
+//             ),
+//             child: Center(
+//               child: Column(
+//                 mainAxisSize: MainAxisSize.min,
+//                 children: [
+//                   TweenAnimationBuilder<double>(
+//                     tween: Tween(begin: 0, end: 1),
+//                     duration: const Duration(milliseconds: 600),
+//                     curve: Curves.elasticOut,
+//                     builder: (context, value, child) {
+//                       return Transform.scale(
+//                         scale: value,
+//                         child: Text(
+//                           _clockData.statusEmoji,
+//                           style: const TextStyle(fontSize: 36),
+//                         ),
+//                       );
+//                     },
+//                   ),
+//                   const SizedBox(height: AdminDesignSystem.spacing8),
+//                   TweenAnimationBuilder<double>(
+//                     tween: Tween(
+//                       begin: 0,
+//                       end: _clockData.savingsProgress * 100,
+//                     ),
+//                     duration: const Duration(milliseconds: 1200),
+//                     curve: Curves.easeOutCubic,
+//                     builder: (context, value, child) {
+//                       return Text(
+//                         '${value.toStringAsFixed(1)}%',
+//                         style: AdminDesignSystem.displayLarge.copyWith(
+//                           color: AdminDesignSystem.primaryNavy,
+//                           fontSize: 42,
+//                           fontWeight: FontWeight.w800,
+//                         ),
+//                       );
+//                     },
+//                   ),
+//                   Text(
+//                     'saved',
+//                     style: AdminDesignSystem.labelMedium.copyWith(
+//                       color: AdminDesignSystem.textSecondary,
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//             ),
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   Widget _buildInsightCard() {
+//     return Container(
+//       width: double.infinity,
+//       padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
+//       decoration: BoxDecoration(
+//         gradient: LinearGradient(
+//           colors: [
+//             _clockData.statusColor.withAlpha(26),
+//             _clockData.statusColor.withAlpha(13),
+//           ],
+//           begin: Alignment.topLeft,
+//           end: Alignment.bottomRight,
+//         ),
+//         borderRadius: BorderRadius.circular(AdminDesignSystem.radius16),
+//         border: Border.all(color: _clockData.statusColor.withAlpha(51)),
+//       ),
+//       child: Row(
+//         children: [
+//           Container(
+//             padding: const EdgeInsets.all(AdminDesignSystem.spacing12),
+//             decoration: BoxDecoration(
+//               color: _clockData.statusColor.withAlpha(38),
+//               borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
+//             ),
+//             child: Icon(
+//               _clockData.statusIcon,
+//               color: _clockData.statusColor,
+//               size: 24,
+//             ),
+//           ),
+//           const SizedBox(width: AdminDesignSystem.spacing12),
+//           Expanded(
+//             child: Column(
+//               crossAxisAlignment: CrossAxisAlignment.start,
+//               children: [
+//                 Text(
+//                   _clockData.statusTitle,
+//                   style: AdminDesignSystem.bodyLarge.copyWith(
+//                     fontWeight: FontWeight.w600,
+//                     color: AdminDesignSystem.primaryNavy,
+//                   ),
+//                 ),
+//                 const SizedBox(height: 2),
+//                 Text(
+//                   _clockData.statusMessage,
+//                   style: AdminDesignSystem.bodySmall.copyWith(
+//                     color: AdminDesignSystem.textSecondary,
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   _ClockData _calculateClockData(GoalModel goal) {
+//     final safeTargetAmount = goal.targetAmount > 0 ? goal.targetAmount : 1.0;
+//     final safeCurrentAmount = goal.currentAmount.clamp(0.0, safeTargetAmount);
+
+//     final savingsProgress = (safeCurrentAmount / safeTargetAmount).clamp(
+//       0.0,
+//       1.0,
+//     );
+
+//     final totalDuration = goal.targetDate.difference(goal.createdAt).inDays;
+//     final elapsedDuration = DateTime.now().difference(goal.createdAt).inDays;
+//     final timeProgress = totalDuration > 0
+//         ? (elapsedDuration / totalDuration).clamp(0.0, 1.0)
+//         : 1.0;
+
+//     final difference = savingsProgress - timeProgress;
+//     final daysRemaining = goal.daysRemaining;
+
+//     if (savingsProgress >= 1.0) {
+//       return _ClockData(
+//         savingsProgress: savingsProgress,
+//         timeProgress: timeProgress,
+//         statusColor: AdminDesignSystem.statusActive,
+//         statusIcon: Icons.celebration,
+//         statusEmoji: '🎉',
+//         statusTitle: 'Goal Completed!',
+//         statusMessage: 'Congratulations! You\'ve reached your target.',
+//       );
+//     } else if (difference > 0.1) {
+//       final daysAhead = ((difference) * totalDuration).round();
+//       return _ClockData(
+//         savingsProgress: savingsProgress,
+//         timeProgress: timeProgress,
+//         statusColor: AdminDesignSystem.statusActive,
+//         statusIcon: Icons.rocket_launch,
+//         statusEmoji: '🚀',
+//         statusTitle: '$daysAhead days ahead!',
+//         statusMessage: 'You\'re saving faster than planned. Keep it up!',
+//       );
+//     } else if (difference > -0.1) {
+//       return _ClockData(
+//         savingsProgress: savingsProgress,
+//         timeProgress: timeProgress,
+//         statusColor: AdminDesignSystem.accentTeal,
+//         statusIcon: Icons.check_circle_outline,
+//         statusEmoji: '✨',
+//         statusTitle: 'On Track',
+//         statusMessage: '$daysRemaining days left. You\'re doing great!',
+//       );
+//     } else {
+//       final weeklyNeeded =
+//           goal.remainingAmount / (daysRemaining / 7).clamp(1, double.infinity);
+//       return _ClockData(
+//         savingsProgress: savingsProgress,
+//         timeProgress: timeProgress,
+//         statusColor: AdminDesignSystem.statusPending,
+//         statusIcon: Icons.speed,
+//         statusEmoji: '⏰',
+//         statusTitle: 'Time to catch up',
+//         statusMessage:
+//             'Save ${_currencyFormatter.format(weeklyNeeded)}/week to reach your goal.',
+//       );
+//     }
+//   }
+// }
+
 // // ==================== CLOCK PAINTER ====================
 
 // class _SavingsClockPainter extends CustomPainter {
@@ -705,13 +768,11 @@
 //     final center = Offset(size.width / 2, size.height / 2);
 //     final radius = size.width / 2;
 
-//     // Background circle
 //     final bgPaint = Paint()
 //       ..color = const Color(0xFFF5F7FA)
 //       ..style = PaintingStyle.fill;
 //     canvas.drawCircle(center, radius, bgPaint);
 
-//     // Outer ring (time track)
 //     final trackPaint = Paint()
 //       ..color = const Color(0xFFE5E7EB)
 //       ..style = PaintingStyle.stroke
@@ -719,7 +780,6 @@
 //       ..strokeCap = StrokeCap.round;
 //     canvas.drawCircle(center, radius - 20, trackPaint);
 
-//     // Time progress arc (gray, showing elapsed time)
 //     if (timePercent > 0) {
 //       final timePaint = Paint()
 //         ..color = const Color(0xFFD1D5DB)
@@ -737,13 +797,11 @@
 //       );
 //     }
 
-//     // Inner progress arc (savings progress with gradient effect)
 //     final progressPaint = Paint()
 //       ..style = PaintingStyle.stroke
 //       ..strokeWidth = 16
 //       ..strokeCap = StrokeCap.round;
 
-//     // Create gradient for progress arc
 //     final progressRect = Rect.fromCircle(center: center, radius: radius - 45);
 //     progressPaint.shader = SweepGradient(
 //       startAngle: -math.pi / 2,
@@ -752,7 +810,6 @@
 //       transform: const GradientRotation(-math.pi / 2),
 //     ).createShader(progressRect);
 
-//     // Draw savings progress
 //     final progressArc = math.pi * 2 * progressPercent * animationValue;
 //     canvas.drawArc(
 //       Rect.fromCircle(center: center, radius: radius - 45),
@@ -762,7 +819,6 @@
 //       progressPaint,
 //     );
 
-//     // Draw clock markers (12 positions)
 //     final markerPaint = Paint()
 //       ..color = const Color(0xFFD1D5DB)
 //       ..strokeWidth = 2
@@ -790,7 +846,6 @@
 //       canvas.drawLine(inner, outer, markerPaint);
 //     }
 
-//     // Draw time indicator (small dot on outer track)
 //     if (timePercent > 0 && timePercent < 1) {
 //       final timeAngle = -math.pi / 2 + (math.pi * 2 * timePercent);
 //       final timeIndicatorPos = Offset(
@@ -798,20 +853,17 @@
 //         center.dy + (radius - 20) * math.sin(timeAngle),
 //       );
 
-//       // Outer glow
 //       final glowPaint = Paint()
 //         ..color = Colors.white.withAlpha(128)
 //         ..style = PaintingStyle.fill;
 //       canvas.drawCircle(timeIndicatorPos, 10, glowPaint);
 
-//       // Inner dot
 //       final dotPaint = Paint()
 //         ..color = const Color(0xFF6B7280)
 //         ..style = PaintingStyle.fill;
 //       canvas.drawCircle(timeIndicatorPos, 6, dotPaint);
 //     }
 
-//     // Draw savings indicator (larger dot on inner track)
 //     if (progressPercent > 0) {
 //       final progressAngle =
 //           -math.pi / 2 + (math.pi * 2 * progressPercent * animationValue);
@@ -820,19 +872,16 @@
 //         center.dy + (radius - 45) * math.sin(progressAngle),
 //       );
 
-//       // Outer glow
 //       final glowPaint = Paint()
 //         ..color = statusColor.withAlpha(77)
 //         ..style = PaintingStyle.fill;
 //       canvas.drawCircle(progressIndicatorPos, 14, glowPaint);
 
-//       // Inner dot
 //       final dotPaint = Paint()
 //         ..color = statusColor
 //         ..style = PaintingStyle.fill;
 //       canvas.drawCircle(progressIndicatorPos, 8, dotPaint);
 
-//       // White center
 //       final centerPaint = Paint()
 //         ..color = Colors.white
 //         ..style = PaintingStyle.fill;
@@ -870,15 +919,6 @@
 //     required this.statusMessage,
 //   });
 // }
-
-// // ==================== HELPER EXTENSION ====================
-
-// // extension on Color {
-// //   static const int _divider = 0xFFE5E7EB;
-// // }
-
-// lib/screens/dashboard/modals/savings_clock_modal.dart
-// REFACTORED VERSION - Dedicated clock widget for proper state management
 
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -965,7 +1005,6 @@ class _SavingsClockModalState extends State<SavingsClockModal>
       child: Column(
         children: [
           _buildHandle(),
-          _buildHeader(),
           Expanded(
             child: widget.goals.isEmpty
                 ? _buildEmptyState()
@@ -988,60 +1027,6 @@ class _SavingsClockModalState extends State<SavingsClockModal>
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.all(AdminDesignSystem.spacing20),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AdminDesignSystem.spacing12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AdminDesignSystem.accentTeal,
-                  AdminDesignSystem.accentTeal.withAlpha(179),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
-            ),
-            child: const Icon(
-              Icons.watch_later_outlined,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: AdminDesignSystem.spacing12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Savings Clock',
-                  style: AdminDesignSystem.headingLarge.copyWith(
-                    color: AdminDesignSystem.primaryNavy,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Track your progress against time',
-                  style: AdminDesignSystem.bodySmall.copyWith(
-                    color: AdminDesignSystem.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: Icon(Icons.close, color: AdminDesignSystem.textSecondary),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildClockContent() {
     final goal = _selectedGoal!;
 
@@ -1052,6 +1037,7 @@ class _SavingsClockModalState extends State<SavingsClockModal>
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(
             horizontal: AdminDesignSystem.spacing20,
+            vertical: AdminDesignSystem.spacing20,
           ),
           child: Column(
             children: [
@@ -1060,7 +1046,7 @@ class _SavingsClockModalState extends State<SavingsClockModal>
                 const SizedBox(height: AdminDesignSystem.spacing24),
               ],
 
-              // REFACTORED: Dedicated clock widget with its own state
+              // Clock display with dedicated widget
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 600),
                 switchInCurve: Curves.easeOutCubic,
@@ -1080,13 +1066,13 @@ class _SavingsClockModalState extends State<SavingsClockModal>
                   );
                 },
                 child: _ClockDisplay(
-                  key: ValueKey(goal.goalId), // Unique key per goal
+                  key: ValueKey(goal.goalId),
                   goal: goal,
                   pulseAnimation: _pulseController,
                 ),
               ),
 
-              const SizedBox(height: AdminDesignSystem.spacing16),
+              const SizedBox(height: AdminDesignSystem.spacing24),
               _buildMetricsRow(goal),
               const SizedBox(height: AdminDesignSystem.spacing24),
               _buildActionButton(goal),
@@ -1403,7 +1389,6 @@ class _ClockDisplayState extends State<_ClockDisplay>
 
     _rotationController.forward();
 
-    // Debug print
     debugPrint('Clock Display Init - ${widget.goal.title}');
     debugPrint('  Current: ${widget.goal.currentAmount}');
     debugPrint('  Target: ${widget.goal.targetAmount}');
@@ -1420,13 +1405,7 @@ class _ClockDisplayState extends State<_ClockDisplay>
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _buildSavingsClock(),
-        const SizedBox(height: AdminDesignSystem.spacing24),
-        _buildInsightCard(),
-      ],
-    );
+    return _buildSavingsClock();
   }
 
   Widget _buildSavingsClock() {
@@ -1434,8 +1413,8 @@ class _ClockDisplayState extends State<_ClockDisplay>
       animation: widget.pulseAnimation,
       builder: (context, child) {
         return Container(
-          width: 280,
-          height: 280,
+          width: 240,
+          height: 240,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             boxShadow: [
@@ -1468,7 +1447,7 @@ class _ClockDisplayState extends State<_ClockDisplay>
                         scale: value,
                         child: Text(
                           _clockData.statusEmoji,
-                          style: const TextStyle(fontSize: 36),
+                          style: const TextStyle(fontSize: 32),
                         ),
                       );
                     },
@@ -1486,7 +1465,7 @@ class _ClockDisplayState extends State<_ClockDisplay>
                         '${value.toStringAsFixed(1)}%',
                         style: AdminDesignSystem.displayLarge.copyWith(
                           color: AdminDesignSystem.primaryNavy,
-                          fontSize: 42,
+                          fontSize: 36,
                           fontWeight: FontWeight.w800,
                         ),
                       );
@@ -1504,63 +1483,6 @@ class _ClockDisplayState extends State<_ClockDisplay>
           ),
         );
       },
-    );
-  }
-
-  Widget _buildInsightCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            _clockData.statusColor.withAlpha(26),
-            _clockData.statusColor.withAlpha(13),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AdminDesignSystem.radius16),
-        border: Border.all(color: _clockData.statusColor.withAlpha(51)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AdminDesignSystem.spacing12),
-            decoration: BoxDecoration(
-              color: _clockData.statusColor.withAlpha(38),
-              borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
-            ),
-            child: Icon(
-              _clockData.statusIcon,
-              color: _clockData.statusColor,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: AdminDesignSystem.spacing12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _clockData.statusTitle,
-                  style: AdminDesignSystem.bodyLarge.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AdminDesignSystem.primaryNavy,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _clockData.statusMessage,
-                  style: AdminDesignSystem.bodySmall.copyWith(
-                    color: AdminDesignSystem.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 

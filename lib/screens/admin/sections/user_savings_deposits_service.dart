@@ -335,8 +335,6 @@ class UserSavingsDepositsService {
         );
   }
 
-  /// Approve payment proof (admin action)
-  /// Simplified: Just updates proof status and user account balance
   Future<bool> approvePaymentProof({
     required String proofId,
     required String adminUserId,
@@ -363,6 +361,7 @@ class UserSavingsDepositsService {
             .doc(proof.transactionId);
         transaction.update(txnRef, {
           'status': TransactionStatus.completed.name,
+          'transactionStatus': TransactionStatus.completed.name,
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
@@ -409,6 +408,7 @@ class UserSavingsDepositsService {
             .doc(proof.transactionId);
         transaction.update(txnRef, {
           'status': TransactionStatus.failed.name,
+          'transactionStatus': TransactionStatus.completed.name,
           'failureReason': 'Proof rejected: $reason',
           'updatedAt': FieldValue.serverTimestamp(),
         });

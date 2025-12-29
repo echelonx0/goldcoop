@@ -308,19 +308,19 @@ class _AnimatedGoalCardState extends State<AnimatedGoalCard>
   }
 
   void _showAddToGoalSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => AddToGoalForm(
-        goal: widget.goal,
-        onContribute: (amount) {
-          Navigator.pop(context);
-          widget.onAddFunds?.call();
-        },
-        onCancel: () => Navigator.pop(context),
-      ),
-    );
+    // showModalBottomSheet(
+    //   context: context,
+    //   isScrollControlled: true,
+    //   backgroundColor: Colors.transparent,
+    //   builder: (context) => AddToGoalForm(
+    //     goal: widget.goal,
+    //     onContribute: (amount) {
+    //       Navigator.pop(context);
+    //       widget.onAddFunds?.call();
+    //     },
+    //     onCancel: () => Navigator.pop(context),
+    //   ),
+    // );
   }
 
   Color _getGoalCategoryColor(GoalCategory category) {

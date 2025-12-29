@@ -90,6 +90,11 @@ class _UserEditBottomSheetState extends State<UserEditBottomSheet>
     super.dispose();
   }
 
+  // ==================== ENUM HELPER ====================
+  String _getEnumName(dynamic enumValue) {
+    return enumValue.toString().split('.').last;
+  }
+
   @override
   Widget build(BuildContext context) {
     return FadeTransition(
@@ -518,6 +523,7 @@ class _UserEditBottomSheetState extends State<UserEditBottomSheet>
             ),
             items: items.map((e) {
               final color = getColor(e);
+              final enumName = _getEnumName(e);
               return DropdownMenuItem(
                 value: e,
                 child: Row(
@@ -532,7 +538,7 @@ class _UserEditBottomSheetState extends State<UserEditBottomSheet>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      (e as dynamic).name.toUpperCase(),
+                      enumName.toUpperCase(),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,

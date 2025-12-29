@@ -229,166 +229,166 @@
 //   }
 // }
 
-// lib/screens/dashboard/tabs/savings_tab.dart
+// // lib/screens/dashboard/tabs/savings_tab.dart
 
-import 'package:flutter/material.dart';
-import '../../../core/theme/admin_design_system.dart';
-import '../../../models/goals_model.dart';
-import '../../../services/firestore_service.dart';
-import 'savings/goal-detail/goal_detail_sheet.dart';
-import 'savings/goal_creation_form.dart';
-import 'savings/add_to_goal_form.dart';
-import 'savings/goals_list_section.dart';
+// import 'package:flutter/material.dart';
+// import '../../../core/theme/admin_design_system.dart';
+// import '../../../models/goals_model.dart';
+// import '../../../services/firestore_service.dart';
+// import 'savings/goal-detail/goal_detail_sheet.dart';
+// import 'savings/goal_creation_form.dart';
+// import 'savings/add_to_goal_form.dart';
+// import 'savings/goals_list_section.dart';
 
-class SavingsTab extends StatefulWidget {
-  final String uid;
-  final VoidCallback? onCreatePlan;
+// class SavingsTab extends StatefulWidget {
+//   final String uid;
+//   final VoidCallback? onCreatePlan;
 
-  const SavingsTab({super.key, required this.uid, this.onCreatePlan});
+//   const SavingsTab({super.key, required this.uid, this.onCreatePlan});
 
-  @override
-  State<SavingsTab> createState() => _SavingsTabState();
-}
+//   @override
+//   State<SavingsTab> createState() => _SavingsTabState();
+// }
 
-class _SavingsTabState extends State<SavingsTab> with TickerProviderStateMixin {
-  late final FirestoreService _firestoreService;
-  late AnimationController _fadeController;
+// class _SavingsTabState extends State<SavingsTab> with TickerProviderStateMixin {
+//   late final FirestoreService _firestoreService;
+//   late AnimationController _fadeController;
 
-  @override
-  void initState() {
-    super.initState();
-    _firestoreService = FirestoreService();
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
-    )..forward();
-  }
+//   @override
+//   void initState() {
+//     super.initState();
+//     _firestoreService = FirestoreService();
+//     _fadeController = AnimationController(
+//       duration: const Duration(milliseconds: 400),
+//       vsync: this,
+//     )..forward();
+//   }
 
-  @override
-  void dispose() {
-    _fadeController.dispose();
-    super.dispose();
-  }
+//   @override
+//   void dispose() {
+//     _fadeController.dispose();
+//     super.dispose();
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AdminDesignSystem.background,
-      body: FadeTransition(
-        opacity: _fadeController,
-        child: CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  GoalsListSection(
-                    uid: widget.uid,
-                    onCreateGoal: _showCreateGoalSheet,
-                    onViewGoal: _showGoalDetailsSheet,
-                    onAddToGoal: _showAddToGoalSheet,
-                  ),
-                  const SizedBox(height: AdminDesignSystem.spacing16),
-                ]),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: AdminDesignSystem.background,
+//       body: FadeTransition(
+//         opacity: _fadeController,
+//         child: CustomScrollView(
+//           slivers: [
+//             SliverPadding(
+//               padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
+//               sliver: SliverList(
+//                 delegate: SliverChildListDelegate([
+//                   GoalsListSection(
+//                     uid: widget.uid,
+//                     onCreateGoal: _showCreateGoalSheet,
+//                     onViewGoal: _showGoalDetailsSheet,
+//                     onAddToGoal: _showAddToGoalSheet,
+//                   ),
+//                   const SizedBox(height: AdminDesignSystem.spacing16),
+//                 ]),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
 
-  void _showCreateGoalSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => GoalCreationForm(
-        onCreateGoal: (goal) => _handleCreateGoal(goal),
-        onCancel: () => Navigator.pop(context),
-      ),
-    );
-  }
+//   void _showCreateGoalSheet() {
+//     showModalBottomSheet(
+//       context: context,
+//       isScrollControlled: true,
+//       backgroundColor: Colors.transparent,
+//       builder: (context) => GoalCreationForm(
+//         onCreateGoal: (goal) => _handleCreateGoal(goal),
+//         onCancel: () => Navigator.pop(context),
+//       ),
+//     );
+//   }
 
-  void _showAddToGoalSheet(GoalModel goal) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => AddToGoalForm(
-        goal: goal,
-        onContribute: (amount) => _handleAddToGoal(goal, amount),
-        onCancel: () => Navigator.pop(context),
-      ),
-    );
-  }
+//   void _showAddToGoalSheet(GoalModel goal) {
+//     showModalBottomSheet(
+//       context: context,
+//       isScrollControlled: true,
+//       backgroundColor: Colors.transparent,
+//       builder: (context) => AddToGoalForm(
+//         goal: goal,
+//         onContribute: (amount) => _handleAddToGoal(goal, amount),
+//         onCancel: () => Navigator.pop(context),
+//       ),
+//     );
+//   }
 
-  void _showGoalDetailsSheet(GoalModel goal) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => GoalDetailSheet(
-        goal: goal,
-        onAddFunds: () {
-          Navigator.pop(context);
-          _showAddToGoalSheet(goal);
-        },
-        onClose: () => Navigator.pop(context),
-      ),
-    );
-  }
+//   void _showGoalDetailsSheet(GoalModel goal) {
+//     showModalBottomSheet(
+//       context: context,
+//       isScrollControlled: true,
+//       backgroundColor: Colors.transparent,
+//       builder: (context) => GoalDetailSheet(
+//         goal: goal,
+//         onAddFunds: () {
+//           Navigator.pop(context);
+//           _showAddToGoalSheet(goal);
+//         },
+//         onClose: () => Navigator.pop(context),
+//       ),
+//     );
+//   }
 
-  Future<void> _handleCreateGoal(GoalModel goal) async {
-    final success = await _firestoreService.createGoal(widget.uid, goal);
+//   Future<void> _handleCreateGoal(GoalModel goal) async {
+//     final success = await _firestoreService.createGoal(widget.uid, goal);
 
-    if (mounted) {
-      Navigator.pop(context);
-      if (success != null) {
-        _showSuccessSnackbar('Goal created successfully');
-      } else {
-        _showErrorSnackbar('Failed to create goal');
-      }
-    }
-  }
+//     if (mounted) {
+//       Navigator.pop(context);
+//       if (success != null) {
+//         _showSuccessSnackbar('Goal created successfully');
+//       } else {
+//         _showErrorSnackbar('Failed to create goal');
+//       }
+//     }
+//   }
 
-  Future<void> _handleAddToGoal(GoalModel goal, double amount) async {
-    final success = await _firestoreService.contributeToGoal(
-      uid: widget.uid,
-      goalId: goal.goalId,
-      amount: amount,
-      description: 'Contribution to ${goal.title}',
-    );
+//   Future<void> _handleAddToGoal(GoalModel goal, double amount) async {
+//     final success = await _firestoreService.contributeToGoal(
+//       uid: widget.uid,
+//       goalId: goal.goalId,
+//       amount: amount,
+//       description: 'Contribution to ${goal.title}',
+//     );
 
-    if (mounted) {
-      Navigator.pop(context);
-      if (success) {
-        _showSuccessSnackbar('Added to goal successfully');
-      } else {
-        _showErrorSnackbar('Failed to add to goal');
-      }
-    }
-  }
+//     if (mounted) {
+//       Navigator.pop(context);
+//       if (success) {
+//         _showSuccessSnackbar('Added to goal successfully');
+//       } else {
+//         _showErrorSnackbar('Failed to add to goal');
+//       }
+//     }
+//   }
 
-  void _showSuccessSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AdminDesignSystem.statusActive,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
+//   void _showSuccessSnackbar(String message) {
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(
+//         content: Text(message),
+//         backgroundColor: AdminDesignSystem.statusActive,
+//         behavior: SnackBarBehavior.floating,
+//         duration: const Duration(seconds: 2),
+//       ),
+//     );
+//   }
 
-  void _showErrorSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AdminDesignSystem.statusError,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-}
+//   void _showErrorSnackbar(String message) {
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(
+//         content: Text(message),
+//         backgroundColor: AdminDesignSystem.statusError,
+//         behavior: SnackBarBehavior.floating,
+//         duration: const Duration(seconds: 2),
+//       ),
+//     );
+//   }
+// }

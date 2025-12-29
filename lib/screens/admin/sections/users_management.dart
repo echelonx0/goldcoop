@@ -5,7 +5,9 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/admin_design_system.dart';
 import '../../../models/user_model.dart';
 import '../../../services/admin_service.dart';
+import '../../../services/firestore_service.dart';
 import '../forms/user_edit_form.dart';
+import 'user_management/transactions_list.dart';
 
 class UsersManagement extends StatefulWidget {
   const UsersManagement({super.key});
@@ -16,6 +18,7 @@ class UsersManagement extends StatefulWidget {
 
 class _UsersManagementState extends State<UsersManagement> {
   final AdminService _adminService = AdminService();
+  final FirestoreService _firestoreService = FirestoreService();
   final _currencyFormatter = NumberFormat.currency(
     symbol: '₦',
     decimalDigits: 0,
@@ -231,7 +234,7 @@ class _UsersManagementState extends State<UsersManagement> {
     return ListView.separated(
       padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
       itemCount: users.length,
-      separatorBuilder: (_, __) =>
+      separatorBuilder: (_, _) =>
           const SizedBox(height: AdminDesignSystem.spacing12),
       itemBuilder: (context, index) {
         final user = users[index];
@@ -241,85 +244,135 @@ class _UsersManagementState extends State<UsersManagement> {
   }
 
   Widget _buildUserCard(UserModel user) {
-    final initials = _getInitials(user.displayName);
-    final avatarColor = _getColorForUser(user.uid);
-
     return AdminCard(
-      onTap: () => _showUserEditForm(user),
-      child: Row(
-        children: [
-          AvatarCircle(
-            initials: initials,
-            backgroundColor: avatarColor,
-            size: 48,
-          ),
-          const SizedBox(width: AdminDesignSystem.spacing12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.all(AdminDesignSystem.spacing12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top row: Avatar + Info + Action buttons
+            Row(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        user.displayName,
-                        style: AdminDesignSystem.bodyLarge.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AdminDesignSystem.textPrimary,
-                        ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              user.displayName,
+                              style: AdminDesignSystem.bodyLarge.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: AdminDesignSystem.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AdminDesignSystem.spacing4),
+                      Text(
+                        user.email,
+                        style: AdminDesignSystem.bodySmall,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    _buildKYCBadge(user.kycStatus),
-                  ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: AdminDesignSystem.spacing4),
-                Text(
-                  user.email,
-                  style: AdminDesignSystem.bodySmall,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: AdminDesignSystem.spacing12),
+                const SizedBox(width: AdminDesignSystem.spacing12),
+                // Action buttons
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: _buildUserMetric(
-                        'Balance',
-                        _currencyFormatter.format(
-                          user.financialProfile.accountBalance,
-                        ),
-                        AdminDesignSystem.statusActive,
-                      ),
+                    _buildActionButton(
+                      icon: Icons.edit,
+                      tooltip: 'Edit user',
+                      onTap: () => _showUserEditForm(user),
+                      color: AdminDesignSystem.accentTeal,
                     ),
-                    Expanded(
-                      child: _buildUserMetric(
-                        'Invested',
-                        _currencyFormatter.format(
-                          user.financialProfile.totalInvested,
-                        ),
-                        AdminDesignSystem.primaryNavy,
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildUserMetric(
-                        'Tokens',
-                        '${user.financialProfile.tokenBalance}',
-                        AdminDesignSystem.accentTeal,
-                      ),
+                    const SizedBox(width: AdminDesignSystem.spacing8),
+                    _buildActionButton(
+                      icon: Icons.history,
+                      tooltip: 'View transactions',
+                      onTap: () => _showUserTransactions(user),
+                      color: AdminDesignSystem.primaryNavy,
                     ),
                   ],
                 ),
               ],
             ),
+            const SizedBox(height: AdminDesignSystem.spacing12),
+            // Metrics row
+            Row(
+              children: [
+                Expanded(
+                  child: _buildUserMetric(
+                    'Balance',
+                    _currencyFormatter.format(
+                      user.financialProfile.accountBalance,
+                    ),
+                    AdminDesignSystem.statusActive,
+                  ),
+                ),
+                Expanded(
+                  child: _buildUserMetric(
+                    'Invested',
+                    _currencyFormatter.format(
+                      user.financialProfile.totalInvested,
+                    ),
+                    AdminDesignSystem.primaryNavy,
+                  ),
+                ),
+                Expanded(
+                  child: _buildUserMetric(
+                    'Tokens',
+                    '${user.financialProfile.tokenBalance}',
+                    AdminDesignSystem.accentTeal,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AdminDesignSystem.spacing12),
+            Row(
+              children: [
+                Text(
+                  'KYC Status: ',
+                  style: AdminDesignSystem.bodySmall.copyWith(
+                    color: AdminDesignSystem.textSecondary,
+                  ),
+                ),
+                const SizedBox(width: AdminDesignSystem.spacing12),
+                _buildKYCBadge(user.kycStatus),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AdminDesignSystem.radius8),
+        child: Container(
+          padding: const EdgeInsets.all(AdminDesignSystem.spacing8),
+          decoration: BoxDecoration(
+            color: color.withAlpha(25),
+            borderRadius: BorderRadius.circular(AdminDesignSystem.radius8),
           ),
-          Icon(
-            Icons.chevron_right,
-            color: AdminDesignSystem.textTertiary,
-            size: 20,
-          ),
-        ],
+          child: Icon(icon, size: 18, color: color),
+        ),
       ),
     );
   }
@@ -368,29 +421,23 @@ class _UsersManagementState extends State<UsersManagement> {
     return StatusBadge(label: label, color: color);
   }
 
-  String _getInitials(String name) {
-    final parts = name.trim().split(' ');
-    if (parts.isEmpty) return 'U';
-    if (parts.length == 1) {
-      return parts[0].substring(0, 1).toUpperCase();
-    }
-    return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
-  }
-
-  Color _getColorForUser(String userId) {
-    final colors = [
-      AdminDesignSystem.primaryNavy,
-      AdminDesignSystem.accentTeal,
-      AdminDesignSystem.statusActive,
-      AdminDesignSystem.statusPending,
-      const Color(0xFF9B59B6),
-      const Color(0xFFE74C3C),
-    ];
-    final hash = userId.hashCode;
-    return colors[hash.abs() % colors.length];
-  }
-
   void _showUserEditForm(UserModel user) {
     showUserEditSheet(context, user, () => setState(() {}));
+  }
+
+  void _showUserTransactions(UserModel user) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
+      builder: (context) => AdminUserTransactionsSheet(
+        userId: user.uid,
+        userName: user.displayName,
+        firestoreService: _firestoreService,
+      ),
+    );
   }
 }

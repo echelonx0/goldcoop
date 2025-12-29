@@ -29,11 +29,11 @@ class DashboardBottomNav extends StatelessWidget {
           activeIcon: Icon(Icons.home, size: 24),
           label: 'Home',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.savings_outlined, size: 24),
-          activeIcon: Icon(Icons.savings, size: 24),
-          label: 'Targets',
-        ),
+        // BottomNavigationBarItem(
+        //   icon: Icon(Icons.savings_outlined, size: 24),
+        //   activeIcon: Icon(Icons.savings, size: 24),
+        //   label: 'Targets',
+        // ),
         BottomNavigationBarItem(
           icon: Icon(Icons.stars_outlined, size: 24),
           activeIcon: Icon(Icons.stars, size: 24),

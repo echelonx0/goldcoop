@@ -4,6 +4,7 @@
 // import 'package:intl/intl.dart';
 // import '../../../core/theme/admin_design_system.dart';
 // import '../../../models/user_model.dart';
+// import 'upload_proof_modal.dart';
 
 // class GeneralSavingsClockModal extends StatelessWidget {
 //   final UserModel user;
@@ -20,9 +21,9 @@
 //   @override
 //   Widget build(BuildContext context) {
 //     final fp = user.financialProfile;
-//     final hasTarget = (fp.savingsTarget) > 0;
-//     final targetAmount = fp.savingsTarget;
-//     final currentBalance = fp.accountBalance;
+//     final hasTarget = (fp.savingsTarget ?? 0) > 0;
+//     final targetAmount = fp.savingsTarget ?? 0;
+//     final currentBalance = fp.accountBalance ?? 0;
 //     final targetDate = fp.savingsTargetDate;
 
 //     final currencyFormatter = NumberFormat.currency(
@@ -51,6 +52,9 @@
 //           topRight: Radius.circular(AdminDesignSystem.radius16),
 //         ),
 //       ),
+//       constraints: BoxConstraints(
+//         maxHeight: MediaQuery.of(context).size.height * 0.8,
+//       ),
 //       child: CustomScrollView(
 //         slivers: [
 //           // Header
@@ -75,83 +79,134 @@
 //             padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
 //             sliver: SliverList(
 //               delegate: SliverChildListDelegate([
-//                 // Target amount card
+//                 // Clock display card
 //                 TweenAnimationBuilder<double>(
 //                   tween: Tween(begin: 0, end: 1),
-//                   duration: const Duration(milliseconds: 500),
+//                   duration: const Duration(milliseconds: 600),
+//                   curve: Curves.easeOutCubic,
 //                   builder: (context, value, child) {
-//                     return Opacity(opacity: value, child: child);
+//                     return Transform.scale(
+//                       scale: 0.8 + (value * 0.2),
+//                       child: Opacity(opacity: value, child: child),
+//                     );
 //                   },
 //                   child: Container(
-//                     decoration: AdminDesignSystem.cardDecoration,
+//                     decoration: BoxDecoration(
+//                       gradient: LinearGradient(
+//                         colors: [
+//                           AdminDesignSystem.accentTeal,
+//                           AdminDesignSystem.accentTeal.withAlpha(230),
+//                         ],
+//                         begin: Alignment.topLeft,
+//                         end: Alignment.bottomRight,
+//                       ),
+//                       borderRadius: BorderRadius.circular(
+//                         AdminDesignSystem.radius16,
+//                       ),
+//                       boxShadow: [
+//                         BoxShadow(
+//                           color: AdminDesignSystem.accentTeal.withAlpha(38),
+//                           blurRadius: 16,
+//                           offset: const Offset(0, 4),
+//                         ),
+//                       ],
+//                     ),
 //                     padding: const EdgeInsets.all(AdminDesignSystem.spacing20),
 //                     child: Column(
-//                       crossAxisAlignment: CrossAxisAlignment.start,
 //                       children: [
+//                         // Clock icon with pulse
+//                         _ClockDisplay(
+//                           daysRemaining: daysRemaining,
+//                           isCompleted: isCompleted,
+//                           isOverdue: isOverdue,
+//                         ),
+//                         const SizedBox(height: AdminDesignSystem.spacing16),
+//                         // Target amount
+//                         TweenAnimationBuilder<double>(
+//                           tween: Tween(begin: 0, end: targetAmount),
+//                           duration: const Duration(milliseconds: 1200),
+//                           curve: Curves.easeOutCubic,
+//                           builder: (context, value, child) {
+//                             return Column(
+//                               children: [
+//                                 Text(
+//                                   'Target Savings',
+//                                   style: AdminDesignSystem.labelMedium.copyWith(
+//                                     color: Colors.white.withAlpha(179),
+//                                   ),
+//                                 ),
+//                                 const SizedBox(
+//                                   height: AdminDesignSystem.spacing8,
+//                                 ),
+//                                 Text(
+//                                   currencyFormatter.format(value),
+//                                   style: AdminDesignSystem.displayLarge
+//                                       .copyWith(
+//                                         color: Colors.white,
+//                                         fontSize: 32,
+//                                       ),
+//                                 ),
+//                               ],
+//                             );
+//                           },
+//                         ),
+//                         const SizedBox(height: AdminDesignSystem.spacing16),
+//                         // Edit button
 //                         Row(
-//                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                           mainAxisAlignment: MainAxisAlignment.center,
 //                           children: [
-//                             Expanded(
-//                               child: Column(
-//                                 crossAxisAlignment: CrossAxisAlignment.start,
-//                                 children: [
-//                                   Text(
-//                                     'Target Amount',
-//                                     style: AdminDesignSystem.labelMedium,
-//                                   ),
-//                                   const SizedBox(
-//                                     height: AdminDesignSystem.spacing8,
-//                                   ),
-//                                   TweenAnimationBuilder<double>(
-//                                     tween: Tween(begin: 0, end: targetAmount),
-//                                     duration: const Duration(
-//                                       milliseconds: 1200,
+//                             Material(
+//                               color: Colors.transparent,
+//                               child: InkWell(
+//                                 onTap: onEditTarget,
+//                                 borderRadius: BorderRadius.circular(
+//                                   AdminDesignSystem.radius12,
+//                                 ),
+//                                 child: Container(
+//                                   decoration: BoxDecoration(
+//                                     color: Colors.white.withAlpha(25),
+//                                     borderRadius: BorderRadius.circular(
+//                                       AdminDesignSystem.radius12,
 //                                     ),
-//                                     curve: Curves.easeOutCubic,
-//                                     builder: (context, value, child) {
-//                                       return Text(
-//                                         currencyFormatter.format(value),
-//                                         style: AdminDesignSystem.displayLarge
+//                                   ),
+//                                   padding: const EdgeInsets.symmetric(
+//                                     horizontal: AdminDesignSystem.spacing16,
+//                                     vertical: AdminDesignSystem.spacing12,
+//                                   ),
+//                                   child: Row(
+//                                     mainAxisSize: MainAxisSize.min,
+//                                     children: [
+//                                       Icon(
+//                                         Icons.edit_outlined,
+//                                         color: Colors.white,
+//                                         size: 20,
+//                                       ),
+//                                       const SizedBox(
+//                                         width: AdminDesignSystem.spacing8,
+//                                       ),
+//                                       Text(
+//                                         'Edit Target',
+//                                         style: AdminDesignSystem.labelSmall
 //                                             .copyWith(
-//                                               color:
-//                                                   AdminDesignSystem.primaryNavy,
-//                                               fontSize: 28,
+//                                               color: Colors.white,
+//                                               fontWeight: FontWeight.w600,
 //                                             ),
-//                                       );
-//                                     },
+//                                       ),
+//                                     ],
 //                                   ),
-//                                 ],
-//                               ),
-//                             ),
-//                             GestureDetector(
-//                               onTap: onEditTarget,
-//                               child: Container(
-//                                 decoration: BoxDecoration(
-//                                   color: AdminDesignSystem.accentTeal.withAlpha(
-//                                     38,
-//                                   ),
-//                                   borderRadius: BorderRadius.circular(
-//                                     AdminDesignSystem.radius12,
-//                                   ),
-//                                 ),
-//                                 padding: const EdgeInsets.all(
-//                                   AdminDesignSystem.spacing12,
-//                                 ),
-//                                 child: Icon(
-//                                   Icons.edit_outlined,
-//                                   size: 20,
-//                                   color: AdminDesignSystem.accentTeal,
 //                                 ),
 //                               ),
 //                             ),
 //                           ],
 //                         ),
-//                         const SizedBox(height: AdminDesignSystem.spacing20),
-//                         _buildProgressSection(progress, isCompleted, isOverdue),
 //                       ],
 //                     ),
 //                   ),
 //                 ),
+//                 const SizedBox(height: AdminDesignSystem.spacing16),
+
+//                 // Progress section
+//                 _buildProgressSection(progress, isCompleted, isOverdue),
 //                 const SizedBox(height: AdminDesignSystem.spacing16),
 
 //                 // Stats section
@@ -212,6 +267,10 @@
 //                 ),
 //                 const SizedBox(height: AdminDesignSystem.spacing16),
 
+//                 // Upload proof button
+//                 _buildUploadProofButton(context),
+//                 const SizedBox(height: AdminDesignSystem.spacing16),
+
 //                 // Achievement banner if completed
 //                 if (isCompleted) _buildAchievementBanner(),
 
@@ -233,6 +292,9 @@
 //           topRight: Radius.circular(AdminDesignSystem.radius16),
 //         ),
 //       ),
+//       constraints: BoxConstraints(
+//         maxHeight: MediaQuery.of(context).size.height * 0.8,
+//       ),
 //       child: Column(
 //         mainAxisSize: MainAxisSize.min,
 //         children: [
@@ -250,65 +312,80 @@
 //               IconButton(onPressed: onClose, icon: const Icon(Icons.close)),
 //             ],
 //           ),
-//           Padding(
-//             padding: const EdgeInsets.all(AdminDesignSystem.spacing32),
-//             child: Column(
-//               children: [
-//                 Container(
-//                   decoration: BoxDecoration(
-//                     color: AdminDesignSystem.accentTeal.withAlpha(38),
-//                     borderRadius: BorderRadius.circular(
-//                       AdminDesignSystem.radius16,
-//                     ),
-//                   ),
-//                   padding: const EdgeInsets.all(AdminDesignSystem.spacing20),
-//                   child: Icon(
-//                     Icons.savings_outlined,
-//                     size: 48,
-//                     color: AdminDesignSystem.accentTeal,
-//                   ),
-//                 ),
-//                 const SizedBox(height: AdminDesignSystem.spacing20),
-//                 Text(
-//                   'No savings target yet',
-//                   style: AdminDesignSystem.headingMedium.copyWith(
-//                     color: AdminDesignSystem.primaryNavy,
-//                   ),
-//                 ),
-//                 const SizedBox(height: AdminDesignSystem.spacing8),
-//                 Text(
-//                   'Set a savings target to track\nyour progress and stay motivated',
-//                   style: AdminDesignSystem.bodySmall,
-//                   textAlign: TextAlign.center,
-//                 ),
-//                 const SizedBox(height: AdminDesignSystem.spacing24),
-//                 SizedBox(
-//                   width: double.infinity,
-//                   child: ElevatedButton(
-//                     onPressed: onEditTarget,
-//                     style: ElevatedButton.styleFrom(
-//                       backgroundColor: AdminDesignSystem.accentTeal,
-//                       foregroundColor: Colors.white,
-//                       padding: const EdgeInsets.symmetric(
-//                         vertical: AdminDesignSystem.spacing16,
-//                       ),
-//                       shape: RoundedRectangleBorder(
+//           Expanded(
+//             child: Padding(
+//               padding: const EdgeInsets.all(AdminDesignSystem.spacing32),
+//               child: Column(
+//                 mainAxisAlignment: MainAxisAlignment.center,
+//                 children: [
+//                   TweenAnimationBuilder<double>(
+//                     tween: Tween(begin: 0, end: 1),
+//                     duration: const Duration(milliseconds: 600),
+//                     builder: (context, value, child) {
+//                       return Transform.scale(
+//                         scale: 0.8 + (value * 0.2),
+//                         child: Opacity(opacity: value, child: child),
+//                       );
+//                     },
+//                     child: Container(
+//                       decoration: BoxDecoration(
+//                         color: AdminDesignSystem.accentTeal.withAlpha(38),
 //                         borderRadius: BorderRadius.circular(
-//                           AdminDesignSystem.radius12,
+//                           AdminDesignSystem.radius16,
 //                         ),
 //                       ),
-//                       elevation: 0,
-//                     ),
-//                     child: Text(
-//                       'Set Target',
-//                       style: AdminDesignSystem.bodyMedium.copyWith(
-//                         fontWeight: FontWeight.w600,
-//                         color: Colors.white,
+//                       padding: const EdgeInsets.all(
+//                         AdminDesignSystem.spacing20,
+//                       ),
+//                       child: Icon(
+//                         Icons.savings_outlined,
+//                         size: 48,
+//                         color: AdminDesignSystem.accentTeal,
 //                       ),
 //                     ),
 //                   ),
-//                 ),
-//               ],
+//                   const SizedBox(height: AdminDesignSystem.spacing20),
+//                   Text(
+//                     'No savings target yet',
+//                     style: AdminDesignSystem.headingMedium.copyWith(
+//                       color: AdminDesignSystem.primaryNavy,
+//                     ),
+//                   ),
+//                   const SizedBox(height: AdminDesignSystem.spacing8),
+//                   Text(
+//                     'Set a savings target to track\nyour progress and stay motivated',
+//                     style: AdminDesignSystem.bodySmall,
+//                     textAlign: TextAlign.center,
+//                   ),
+//                   const SizedBox(height: AdminDesignSystem.spacing24),
+//                   SizedBox(
+//                     width: double.infinity,
+//                     child: ElevatedButton(
+//                       onPressed: onEditTarget,
+//                       style: ElevatedButton.styleFrom(
+//                         backgroundColor: AdminDesignSystem.accentTeal,
+//                         foregroundColor: Colors.white,
+//                         padding: const EdgeInsets.symmetric(
+//                           vertical: AdminDesignSystem.spacing16,
+//                         ),
+//                         shape: RoundedRectangleBorder(
+//                           borderRadius: BorderRadius.circular(
+//                             AdminDesignSystem.radius12,
+//                           ),
+//                         ),
+//                         elevation: 0,
+//                       ),
+//                       child: Text(
+//                         'Set Target',
+//                         style: AdminDesignSystem.bodyMedium.copyWith(
+//                           fontWeight: FontWeight.w600,
+//                           color: Colors.white,
+//                         ),
+//                       ),
+//                     ),
+//                   ),
+//                 ],
+//               ),
 //             ),
 //           ),
 //         ],
@@ -321,78 +398,82 @@
 //     bool isCompleted,
 //     bool isOverdue,
 //   ) {
-//     return TweenAnimationBuilder<double>(
-//       tween: Tween(begin: 0, end: progress),
-//       duration: const Duration(milliseconds: 1200),
-//       curve: Curves.easeOutCubic,
-//       builder: (context, value, child) {
-//         return Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             ClipRRect(
-//               borderRadius: BorderRadius.circular(AdminDesignSystem.radius8),
-//               child: LinearProgressIndicator(
-//                 value: value.clamp(0.0, 1.0),
-//                 minHeight: 8,
-//                 backgroundColor: AdminDesignSystem.accentTeal.withAlpha(38),
-//                 valueColor: AlwaysStoppedAnimation<Color>(
-//                   isCompleted
-//                       ? AdminDesignSystem.statusActive
-//                       : AdminDesignSystem.accentTeal,
+//     return Container(
+//       decoration: AdminDesignSystem.cardDecoration,
+//       padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
+//       child: TweenAnimationBuilder<double>(
+//         tween: Tween(begin: 0, end: progress),
+//         duration: const Duration(milliseconds: 1200),
+//         curve: Curves.easeOutCubic,
+//         builder: (context, value, child) {
+//           return Column(
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               ClipRRect(
+//                 borderRadius: BorderRadius.circular(AdminDesignSystem.radius8),
+//                 child: LinearProgressIndicator(
+//                   value: value.clamp(0.0, 1.0),
+//                   minHeight: 8,
+//                   backgroundColor: AdminDesignSystem.accentTeal.withAlpha(38),
+//                   valueColor: AlwaysStoppedAnimation<Color>(
+//                     isCompleted
+//                         ? AdminDesignSystem.statusActive
+//                         : AdminDesignSystem.accentTeal,
+//                   ),
 //                 ),
 //               ),
-//             ),
-//             const SizedBox(height: AdminDesignSystem.spacing8),
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//               children: [
-//                 Text(
-//                   '${(value * 100).toStringAsFixed(1)}% complete',
-//                   style: AdminDesignSystem.labelSmall.copyWith(
-//                     fontWeight: FontWeight.w600,
+//               const SizedBox(height: AdminDesignSystem.spacing8),
+//               Row(
+//                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                 children: [
+//                   Text(
+//                     '${(value * 100).toStringAsFixed(1)}% complete',
+//                     style: AdminDesignSystem.labelSmall.copyWith(
+//                       fontWeight: FontWeight.w600,
+//                     ),
 //                   ),
-//                 ),
-//                 if (isCompleted)
-//                   Row(
-//                     children: [
-//                       Icon(
-//                         Icons.check_circle,
-//                         size: 14,
-//                         color: AdminDesignSystem.statusActive,
-//                       ),
-//                       const SizedBox(width: AdminDesignSystem.spacing4),
-//                       Text(
-//                         'Target reached',
-//                         style: AdminDesignSystem.labelSmall.copyWith(
+//                   if (isCompleted)
+//                     Row(
+//                       children: [
+//                         Icon(
+//                           Icons.check_circle,
+//                           size: 14,
 //                           color: AdminDesignSystem.statusActive,
-//                           fontWeight: FontWeight.w600,
 //                         ),
-//                       ),
-//                     ],
-//                   )
-//                 else if (isOverdue)
-//                   Row(
-//                     children: [
-//                       Icon(
-//                         Icons.warning_amber,
-//                         size: 14,
-//                         color: AdminDesignSystem.statusError,
-//                       ),
-//                       const SizedBox(width: AdminDesignSystem.spacing4),
-//                       Text(
-//                         'Overdue',
-//                         style: AdminDesignSystem.labelSmall.copyWith(
+//                         const SizedBox(width: AdminDesignSystem.spacing4),
+//                         Text(
+//                           'Target reached',
+//                           style: AdminDesignSystem.labelSmall.copyWith(
+//                             color: AdminDesignSystem.statusActive,
+//                             fontWeight: FontWeight.w600,
+//                           ),
+//                         ),
+//                       ],
+//                     )
+//                   else if (isOverdue)
+//                     Row(
+//                       children: [
+//                         Icon(
+//                           Icons.warning_amber,
+//                           size: 14,
 //                           color: AdminDesignSystem.statusError,
-//                           fontWeight: FontWeight.w600,
 //                         ),
-//                       ),
-//                     ],
-//                   ),
-//               ],
-//             ),
-//           ],
-//         );
-//       },
+//                         const SizedBox(width: AdminDesignSystem.spacing4),
+//                         Text(
+//                           'Overdue',
+//                           style: AdminDesignSystem.labelSmall.copyWith(
+//                             color: AdminDesignSystem.statusError,
+//                             fontWeight: FontWeight.w600,
+//                           ),
+//                         ),
+//                       ],
+//                     ),
+//                 ],
+//               ),
+//             ],
+//           );
+//         },
+//       ),
 //     );
 //   }
 
@@ -407,37 +488,33 @@
 //     return Container(
 //       decoration: AdminDesignSystem.cardDecoration,
 //       padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
-//       child: Column(
+//       child: Row(
 //         children: [
-//           Row(
-//             children: [
-//               Expanded(
-//                 child: _buildStatItem(
-//                   label: 'Saved',
-//                   value: formatter.format(currentBalance),
-//                   icon: Icons.account_balance_wallet_outlined,
-//                   color: isCompleted
-//                       ? AdminDesignSystem.statusActive
-//                       : AdminDesignSystem.accentTeal,
-//                 ),
-//               ),
-//               Container(
-//                 width: 1,
-//                 height: 60,
-//                 color: AdminDesignSystem.divider,
-//                 margin: const EdgeInsets.symmetric(
-//                   horizontal: AdminDesignSystem.spacing12,
-//                 ),
-//               ),
-//               Expanded(
-//                 child: _buildStatItem(
-//                   label: 'Remaining',
-//                   value: formatter.format(remainingAmount),
-//                   icon: Icons.hourglass_empty,
-//                   color: AdminDesignSystem.textSecondary,
-//                 ),
-//               ),
-//             ],
+//           Expanded(
+//             child: _buildStatItem(
+//               label: 'Saved',
+//               value: formatter.format(currentBalance),
+//               icon: Icons.account_balance_wallet_outlined,
+//               color: isCompleted
+//                   ? AdminDesignSystem.statusActive
+//                   : AdminDesignSystem.accentTeal,
+//             ),
+//           ),
+//           Container(
+//             width: 1,
+//             height: 60,
+//             color: AdminDesignSystem.divider,
+//             margin: const EdgeInsets.symmetric(
+//               horizontal: AdminDesignSystem.spacing12,
+//             ),
+//           ),
+//           Expanded(
+//             child: _buildStatItem(
+//               label: 'Remaining',
+//               value: formatter.format(remainingAmount),
+//               icon: Icons.hourglass_empty,
+//               color: AdminDesignSystem.textSecondary,
+//             ),
 //           ),
 //         ],
 //       ),
@@ -467,6 +544,60 @@
 //           overflow: TextOverflow.ellipsis,
 //         ),
 //       ],
+//     );
+//   }
+
+//   Widget _buildUploadProofButton(BuildContext context) {
+//     return Material(
+//       color: Colors.transparent,
+//       child: InkWell(
+//         onTap: () {
+//           showModalBottomSheet(
+//             context: context,
+//             isScrollControlled: true,
+//             backgroundColor: Colors.transparent,
+//             builder: (context) => UploadProofModal(
+//               transactionId: '',
+//               goalId: '',
+
+//               goalTitle: 'General Account Funding',
+//               onSuccess: () {
+//                 Navigator.pop(context); // Close upload modal
+//                 Navigator.pop(context); // Close savings clock modal
+//               },
+//               onCancel: () {
+//                 Navigator.pop(context);
+//               },
+//             ),
+//           );
+//         },
+//         borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
+//         child: Container(
+//           decoration: BoxDecoration(
+//             border: Border.all(color: AdminDesignSystem.accentTeal),
+//             borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
+//           ),
+//           padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
+//           child: Row(
+//             mainAxisAlignment: MainAxisAlignment.center,
+//             children: [
+//               Icon(
+//                 Icons.upload_file_outlined,
+//                 color: AdminDesignSystem.accentTeal,
+//                 size: 20,
+//               ),
+//               const SizedBox(width: AdminDesignSystem.spacing8),
+//               Text(
+//                 'Upload Proof of Payment',
+//                 style: AdminDesignSystem.bodyMedium.copyWith(
+//                   color: AdminDesignSystem.accentTeal,
+//                   fontWeight: FontWeight.w600,
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
 //     );
 //   }
 
@@ -557,15 +688,150 @@
 //   }
 // }
 
-// lib/screens/dashboard/modals/general_savings_clock_modal.dart
+// // ==================== CLOCK DISPLAY COMPONENT ====================
 
+// class _ClockDisplay extends StatefulWidget {
+//   final int daysRemaining;
+//   final bool isCompleted;
+//   final bool isOverdue;
+
+//   const _ClockDisplay({
+//     required this.daysRemaining,
+//     required this.isCompleted,
+//     required this.isOverdue,
+//   });
+
+//   @override
+//   State<_ClockDisplay> createState() => _ClockDisplayState();
+// }
+
+// class _ClockDisplayState extends State<_ClockDisplay>
+//     with SingleTickerProviderStateMixin {
+//   late AnimationController _pulseController;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _pulseController = AnimationController(
+//       duration: const Duration(milliseconds: 1500),
+//       vsync: this,
+//     )..repeat(reverse: true);
+//   }
+
+//   @override
+//   void dispose() {
+//     _pulseController.dispose();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return AnimatedBuilder(
+//       animation: _pulseController,
+//       builder: (context, child) {
+//         return Container(
+//           padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
+//           decoration: BoxDecoration(
+//             color: Colors.white.withAlpha(
+//               (25 + (_pulseController.value * 15)).toInt(),
+//             ),
+//             borderRadius: BorderRadius.circular(AdminDesignSystem.radius16),
+//           ),
+//           child: Stack(
+//             alignment: Alignment.center,
+//             children: [
+//               // Clock icon
+//               Icon(Icons.watch_later_outlined, color: Colors.white, size: 48),
+//               // Badge for status
+//               if (widget.daysRemaining > 0 && !widget.isCompleted)
+//                 Positioned(
+//                   right: -4,
+//                   top: -4,
+//                   child: Container(
+//                     padding: const EdgeInsets.symmetric(
+//                       horizontal: AdminDesignSystem.spacing8,
+//                       vertical: AdminDesignSystem.spacing4,
+//                     ),
+//                     decoration: BoxDecoration(
+//                       color: AdminDesignSystem.statusActive,
+//                       borderRadius: BorderRadius.circular(
+//                         AdminDesignSystem.radius8,
+//                       ),
+//                       boxShadow: [
+//                         BoxShadow(
+//                           color: AdminDesignSystem.statusActive.withAlpha(51),
+//                           blurRadius: 8,
+//                           offset: const Offset(0, 2),
+//                         ),
+//                       ],
+//                     ),
+//                     child: Text(
+//                       '${widget.daysRemaining}d',
+//                       style: AdminDesignSystem.labelSmall.copyWith(
+//                         color: Colors.white,
+//                         fontWeight: FontWeight.w700,
+//                       ),
+//                     ),
+//                   ),
+//                 )
+//               else if (widget.isCompleted)
+//                 Positioned(
+//                   right: -4,
+//                   top: -4,
+//                   child: Container(
+//                     width: 28,
+//                     height: 28,
+//                     decoration: BoxDecoration(
+//                       color: AdminDesignSystem.statusActive,
+//                       shape: BoxShape.circle,
+//                       boxShadow: [
+//                         BoxShadow(
+//                           color: AdminDesignSystem.statusActive.withAlpha(51),
+//                           blurRadius: 8,
+//                           offset: const Offset(0, 2),
+//                         ),
+//                       ],
+//                     ),
+//                     child: Icon(Icons.check, size: 16, color: Colors.white),
+//                   ),
+//                 )
+//               else if (widget.isOverdue)
+//                 Positioned(
+//                   right: -4,
+//                   top: -4,
+//                   child: Container(
+//                     width: 28,
+//                     height: 28,
+//                     decoration: BoxDecoration(
+//                       color: AdminDesignSystem.statusError,
+//                       shape: BoxShape.circle,
+//                       boxShadow: [
+//                         BoxShadow(
+//                           color: AdminDesignSystem.statusError.withAlpha(51),
+//                           blurRadius: 8,
+//                           offset: const Offset(0, 2),
+//                         ),
+//                       ],
+//                     ),
+//                     child: Icon(Icons.warning, size: 16, color: Colors.white),
+//                   ),
+//                 ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
+// }
+
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/admin_design_system.dart';
 import '../../../models/user_model.dart';
 import 'upload_proof_modal.dart';
 
-class GeneralSavingsClockModal extends StatelessWidget {
+class GeneralSavingsClockModal extends StatefulWidget {
   final UserModel user;
   final VoidCallback onEditTarget;
   final VoidCallback onClose;
@@ -578,22 +844,132 @@ class GeneralSavingsClockModal extends StatelessWidget {
   });
 
   @override
+  State<GeneralSavingsClockModal> createState() =>
+      GeneralSavingsClockModalState();
+}
+
+class GeneralSavingsClockModalState extends State<GeneralSavingsClockModal>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final fp = user.financialProfile;
+    final fp = widget.user.financialProfile;
     final hasTarget = (fp.savingsTarget ?? 0) > 0;
     final targetAmount = fp.savingsTarget ?? 0;
     final currentBalance = fp.accountBalance ?? 0;
     final targetDate = fp.savingsTargetDate;
 
-    final currencyFormatter = NumberFormat.currency(
-      symbol: '₦',
-      decimalDigits: 0,
-    );
-
     if (!hasTarget || targetDate == null) {
-      return _buildEmptyState(context);
+      return _buildEmptyState();
     }
 
+    return _buildClockContent(currentBalance, targetAmount, targetDate);
+  }
+
+  Widget _buildEmptyState() {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AdminDesignSystem.radius24),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHandle(),
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AdminDesignSystem.spacing32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(
+                        AdminDesignSystem.spacing24,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AdminDesignSystem.accentTeal.withAlpha(38),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.savings_outlined,
+                        size: 64,
+                        color: AdminDesignSystem.accentTeal,
+                      ),
+                    ),
+                    const SizedBox(height: AdminDesignSystem.spacing24),
+                    Text(
+                      'No savings target yet',
+                      style: AdminDesignSystem.headingMedium.copyWith(
+                        color: AdminDesignSystem.primaryNavy,
+                      ),
+                    ),
+                    const SizedBox(height: AdminDesignSystem.spacing8),
+                    Text(
+                      'Set a savings target to track\nyour progress and stay motivated',
+                      style: AdminDesignSystem.bodySmall,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AdminDesignSystem.spacing24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: widget.onEditTarget,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AdminDesignSystem.accentTeal,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AdminDesignSystem.spacing16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AdminDesignSystem.radius12,
+                            ),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          'Set Target',
+                          style: AdminDesignSystem.bodyMedium.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildClockContent(
+    double currentBalance,
+    double targetAmount,
+    DateTime targetDate,
+  ) {
     final progress = (currentBalance / targetAmount).clamp(0.0, 1.0);
     final remainingAmount = (targetAmount - currentBalance).clamp(
       0.0,
@@ -603,238 +979,125 @@ class GeneralSavingsClockModal extends StatelessWidget {
     final isCompleted = currentBalance >= targetAmount;
     final isOverdue = DateTime.now().isAfter(targetDate) && !isCompleted;
 
+    final currencyFormatter = NumberFormat.currency(
+      symbol: '₦',
+      decimalDigits: 0,
+    );
+
     return Container(
-      decoration: BoxDecoration(
-        color: AdminDesignSystem.cardBackground,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(AdminDesignSystem.radius16),
-          topRight: Radius.circular(AdminDesignSystem.radius16),
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AdminDesignSystem.radius24),
         ),
       ),
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.8,
-      ),
-      child: CustomScrollView(
-        slivers: [
-          // Header
-          SliverAppBar(
-            pinned: true,
-            backgroundColor: AdminDesignSystem.cardBackground,
-            elevation: 0,
-            leading: const SizedBox.shrink(),
-            title: Text(
-              'Savings Goal',
-              style: AdminDesignSystem.headingMedium.copyWith(
-                color: AdminDesignSystem.primaryNavy,
+      child: Column(
+        children: [
+          _buildHandle(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AdminDesignSystem.spacing20,
+                vertical: AdminDesignSystem.spacing20,
               ),
-            ),
-            actions: [
-              IconButton(onPressed: onClose, icon: const Icon(Icons.close)),
-            ],
-          ),
+              child: Column(
+                children: [
+                  // Clock display
+                  _buildClockDisplay(progress, isCompleted, isOverdue),
+                  const SizedBox(height: AdminDesignSystem.spacing24),
 
-          // Content
-          SliverPadding(
-            padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                // Clock display card
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: 1),
-                  duration: const Duration(milliseconds: 600),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, child) {
-                    return Transform.scale(
-                      scale: 0.8 + (value * 0.2),
-                      child: Opacity(opacity: value, child: child),
-                    );
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AdminDesignSystem.accentTeal,
-                          AdminDesignSystem.accentTeal.withAlpha(230),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(
-                        AdminDesignSystem.radius16,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AdminDesignSystem.accentTeal.withAlpha(38),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(AdminDesignSystem.spacing20),
-                    child: Column(
-                      children: [
-                        // Clock icon with pulse
-                        _ClockDisplay(
-                          daysRemaining: daysRemaining,
-                          isCompleted: isCompleted,
-                          isOverdue: isOverdue,
-                        ),
-                        const SizedBox(height: AdminDesignSystem.spacing16),
-                        // Target amount
-                        TweenAnimationBuilder<double>(
-                          tween: Tween(begin: 0, end: targetAmount),
-                          duration: const Duration(milliseconds: 1200),
-                          curve: Curves.easeOutCubic,
-                          builder: (context, value, child) {
-                            return Column(
-                              children: [
-                                Text(
-                                  'Target Savings',
-                                  style: AdminDesignSystem.labelMedium.copyWith(
-                                    color: Colors.white.withAlpha(179),
-                                  ),
-                                ),
-                                const SizedBox(
-                                  height: AdminDesignSystem.spacing8,
-                                ),
-                                Text(
-                                  currencyFormatter.format(value),
-                                  style: AdminDesignSystem.displayLarge
-                                      .copyWith(
-                                        color: Colors.white,
-                                        fontSize: 32,
-                                      ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                        const SizedBox(height: AdminDesignSystem.spacing16),
-                        // Edit button
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: onEditTarget,
-                                borderRadius: BorderRadius.circular(
-                                  AdminDesignSystem.radius12,
-                                ),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withAlpha(25),
-                                    borderRadius: BorderRadius.circular(
-                                      AdminDesignSystem.radius12,
-                                    ),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AdminDesignSystem.spacing16,
-                                    vertical: AdminDesignSystem.spacing12,
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.edit_outlined,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(
-                                        width: AdminDesignSystem.spacing8,
-                                      ),
-                                      Text(
-                                        'Edit Target',
-                                        style: AdminDesignSystem.labelSmall
-                                            .copyWith(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                  // Metrics row
+                  _buildMetricsRow(
+                    currentBalance,
+                    targetAmount,
+                    currencyFormatter,
+                  ),
+                  const SizedBox(height: AdminDesignSystem.spacing24),
+
+                  // Edit target + Upload button row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: widget.onEditTarget,
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(
+                              color: AdminDesignSystem.accentTeal,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AdminDesignSystem.spacing12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AdminDesignSystem.radius12,
                               ),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AdminDesignSystem.spacing16),
-
-                // Progress section
-                _buildProgressSection(progress, isCompleted, isOverdue),
-                const SizedBox(height: AdminDesignSystem.spacing16),
-
-                // Stats section
-                _buildStatsGrid(
-                  currentBalance,
-                  targetAmount,
-                  remainingAmount,
-                  daysRemaining,
-                  isCompleted,
-                  currencyFormatter,
-                ),
-                const SizedBox(height: AdminDesignSystem.spacing16),
-
-                // Target date section
-                Container(
-                  decoration: AdminDesignSystem.cardDecoration,
-                  padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Target Date', style: AdminDesignSystem.labelMedium),
-                      const SizedBox(height: AdminDesignSystem.spacing12),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.calendar_today_outlined,
-                            color: AdminDesignSystem.accentTeal,
-                            size: 24,
                           ),
-                          const SizedBox(width: AdminDesignSystem.spacing12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
+                              const Icon(Icons.edit_outlined, size: 18),
+                              const SizedBox(width: AdminDesignSystem.spacing8),
                               Text(
-                                DateFormat('MMM dd, yyyy').format(targetDate),
+                                'Edit Target',
                                 style: AdminDesignSystem.bodyMedium.copyWith(
-                                  color: AdminDesignSystem.textPrimary,
                                   fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(
-                                height: AdminDesignSystem.spacing4,
-                              ),
-                              Text(
-                                _formatDaysRemaining(daysRemaining),
-                                style: AdminDesignSystem.labelSmall.copyWith(
-                                  color: isOverdue
-                                      ? AdminDesignSystem.statusError
-                                      : AdminDesignSystem.textSecondary,
+                                  color: AdminDesignSystem.accentTeal,
                                 ),
                               ),
                             ],
                           ),
-                        ],
+                        ),
+                      ),
+                      const SizedBox(width: AdminDesignSystem.spacing12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _showUploadProofModal(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AdminDesignSystem.accentTeal,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                              vertical: AdminDesignSystem.spacing12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                AdminDesignSystem.radius12,
+                              ),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.upload_file_outlined, size: 18),
+                              const SizedBox(width: AdminDesignSystem.spacing8),
+                              Text(
+                                'Upload',
+                                style: AdminDesignSystem.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: AdminDesignSystem.spacing16),
 
-                // Upload proof button
-                _buildUploadProofButton(context),
-                const SizedBox(height: AdminDesignSystem.spacing16),
+                  const SizedBox(height: AdminDesignSystem.spacing24),
 
-                // Achievement banner if completed
-                if (isCompleted) _buildAchievementBanner(),
+                  // Target date
+                  _buildTargetDateCard(targetDate, daysRemaining, isOverdue),
+                  const SizedBox(height: AdminDesignSystem.spacing24),
 
-                const SizedBox(height: AdminDesignSystem.spacing16),
-              ]),
+                  // Achievement banner if completed
+                  if (isCompleted) _buildAchievementBanner(),
+
+                  const SizedBox(height: AdminDesignSystem.spacing16),
+                ],
+              ),
             ),
           ),
         ],
@@ -842,237 +1105,277 @@ class GeneralSavingsClockModal extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildHandle() {
     return Container(
+      margin: const EdgeInsets.only(top: AdminDesignSystem.spacing12),
+      width: 40,
+      height: 4,
       decoration: BoxDecoration(
-        color: AdminDesignSystem.cardBackground,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(AdminDesignSystem.radius16),
-          topRight: Radius.circular(AdminDesignSystem.radius16),
-        ),
+        color: AdminDesignSystem.textTertiary.withAlpha(77),
+        borderRadius: BorderRadius.circular(2),
       ),
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.8,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AppBar(
-            backgroundColor: AdminDesignSystem.cardBackground,
-            elevation: 0,
-            leading: const SizedBox.shrink(),
-            title: Text(
-              'Savings Goal',
-              style: AdminDesignSystem.headingMedium.copyWith(
-                color: AdminDesignSystem.primaryNavy,
+    );
+  }
+
+  Widget _buildClockDisplay(double progress, bool isCompleted, bool isOverdue) {
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) {
+        return Container(
+          width: 240,
+          height: 240,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: _getStatusColor(
+                  isCompleted,
+                  isOverdue,
+                ).withAlpha((38 + (_pulseController.value * 25)).toInt()),
+                blurRadius: 40 + (_pulseController.value * 20),
+                spreadRadius: 5,
               ),
-            ),
-            actions: [
-              IconButton(onPressed: onClose, icon: const Icon(Icons.close)),
             ],
           ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(AdminDesignSystem.spacing32),
+          child: CustomPaint(
+            painter: _GeneralClockPainter(
+              progressPercent: progress,
+              statusColor: _getStatusColor(isCompleted, isOverdue),
+            ),
+            child: Center(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   TweenAnimationBuilder<double>(
                     tween: Tween(begin: 0, end: 1),
                     duration: const Duration(milliseconds: 600),
+                    curve: Curves.elasticOut,
                     builder: (context, value, child) {
                       return Transform.scale(
-                        scale: 0.8 + (value * 0.2),
-                        child: Opacity(opacity: value, child: child),
+                        scale: value,
+                        child: Text(
+                          isCompleted
+                              ? '🎉'
+                              : isOverdue
+                              ? '⏰'
+                              : '✨',
+                          style: const TextStyle(fontSize: 32),
+                        ),
                       );
                     },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AdminDesignSystem.accentTeal.withAlpha(38),
-                        borderRadius: BorderRadius.circular(
-                          AdminDesignSystem.radius16,
-                        ),
-                      ),
-                      padding: const EdgeInsets.all(
-                        AdminDesignSystem.spacing20,
-                      ),
-                      child: Icon(
-                        Icons.savings_outlined,
-                        size: 48,
-                        color: AdminDesignSystem.accentTeal,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AdminDesignSystem.spacing20),
-                  Text(
-                    'No savings target yet',
-                    style: AdminDesignSystem.headingMedium.copyWith(
-                      color: AdminDesignSystem.primaryNavy,
-                    ),
                   ),
                   const SizedBox(height: AdminDesignSystem.spacing8),
-                  Text(
-                    'Set a savings target to track\nyour progress and stay motivated',
-                    style: AdminDesignSystem.bodySmall,
-                    textAlign: TextAlign.center,
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: progress * 100),
+                    duration: const Duration(milliseconds: 1200),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, child) {
+                      return Text(
+                        '${value.toStringAsFixed(1)}%',
+                        style: AdminDesignSystem.displayLarge.copyWith(
+                          color: AdminDesignSystem.primaryNavy,
+                          fontSize: 36,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      );
+                    },
                   ),
-                  const SizedBox(height: AdminDesignSystem.spacing24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: onEditTarget,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AdminDesignSystem.accentTeal,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AdminDesignSystem.spacing16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            AdminDesignSystem.radius12,
-                          ),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        'Set Target',
-                        style: AdminDesignSystem.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
+                  Text(
+                    'saved',
+                    style: AdminDesignSystem.labelMedium.copyWith(
+                      color: AdminDesignSystem.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildProgressSection(
-    double progress,
-    bool isCompleted,
-    bool isOverdue,
-  ) {
-    return Container(
-      decoration: AdminDesignSystem.cardDecoration,
-      padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0, end: progress),
-        duration: const Duration(milliseconds: 1200),
-        curve: Curves.easeOutCubic,
-        builder: (context, value, child) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AdminDesignSystem.radius8),
-                child: LinearProgressIndicator(
-                  value: value.clamp(0.0, 1.0),
-                  minHeight: 8,
-                  backgroundColor: AdminDesignSystem.accentTeal.withAlpha(38),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    isCompleted
-                        ? AdminDesignSystem.statusActive
-                        : AdminDesignSystem.accentTeal,
-                  ),
-                ),
-              ),
-              const SizedBox(height: AdminDesignSystem.spacing8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '${(value * 100).toStringAsFixed(1)}% complete',
-                    style: AdminDesignSystem.labelSmall.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (isCompleted)
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.check_circle,
-                          size: 14,
-                          color: AdminDesignSystem.statusActive,
-                        ),
-                        const SizedBox(width: AdminDesignSystem.spacing4),
-                        Text(
-                          'Target reached',
-                          style: AdminDesignSystem.labelSmall.copyWith(
-                            color: AdminDesignSystem.statusActive,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    )
-                  else if (isOverdue)
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.warning_amber,
-                          size: 14,
-                          color: AdminDesignSystem.statusError,
-                        ),
-                        const SizedBox(width: AdminDesignSystem.spacing4),
-                        Text(
-                          'Overdue',
-                          style: AdminDesignSystem.labelSmall.copyWith(
-                            color: AdminDesignSystem.statusError,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildStatsGrid(
+  Widget _buildMetricsRow(
     double currentBalance,
     double targetAmount,
-    double remainingAmount,
-    int daysRemaining,
-    bool isCompleted,
     NumberFormat formatter,
+  ) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
+            decoration: BoxDecoration(
+              color: AdminDesignSystem.background,
+              borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.savings_outlined,
+                      size: 16,
+                      color: AdminDesignSystem.accentTeal,
+                    ),
+                    const SizedBox(width: AdminDesignSystem.spacing4),
+                    Text(
+                      'Saved',
+                      style: AdminDesignSystem.labelSmall.copyWith(
+                        color: AdminDesignSystem.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AdminDesignSystem.spacing8),
+                Text(
+                  formatter.format(currentBalance),
+                  style: AdminDesignSystem.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AdminDesignSystem.accentTeal,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: AdminDesignSystem.spacing12),
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
+            decoration: BoxDecoration(
+              color: AdminDesignSystem.background,
+              borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.flag_outlined,
+                      size: 16,
+                      color: AdminDesignSystem.primaryNavy,
+                    ),
+                    const SizedBox(width: AdminDesignSystem.spacing4),
+                    Text(
+                      'Target',
+                      style: AdminDesignSystem.labelSmall.copyWith(
+                        color: AdminDesignSystem.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AdminDesignSystem.spacing8),
+                Text(
+                  formatter.format(targetAmount),
+                  style: AdminDesignSystem.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AdminDesignSystem.primaryNavy,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTargetDateCard(
+    DateTime targetDate,
+    int daysRemaining,
+    bool isOverdue,
   ) {
     return Container(
       decoration: AdminDesignSystem.cardDecoration,
       padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
       child: Row(
         children: [
-          Expanded(
-            child: _buildStatItem(
-              label: 'Saved',
-              value: formatter.format(currentBalance),
-              icon: Icons.account_balance_wallet_outlined,
-              color: isCompleted
-                  ? AdminDesignSystem.statusActive
-                  : AdminDesignSystem.accentTeal,
-            ),
+          Icon(
+            Icons.calendar_today_outlined,
+            color: AdminDesignSystem.accentTeal,
+            size: 20,
           ),
+          const SizedBox(width: AdminDesignSystem.spacing12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                DateFormat('MMM dd, yyyy').format(targetDate),
+                style: AdminDesignSystem.bodyMedium.copyWith(
+                  color: AdminDesignSystem.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AdminDesignSystem.spacing4),
+              Text(
+                _formatDaysRemaining(daysRemaining),
+                style: AdminDesignSystem.labelSmall.copyWith(
+                  color: isOverdue
+                      ? AdminDesignSystem.statusError
+                      : AdminDesignSystem.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAchievementBanner() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AdminDesignSystem.statusActive,
+            AdminDesignSystem.statusActive.withAlpha(230),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
+        boxShadow: [
+          BoxShadow(
+            color: AdminDesignSystem.statusActive.withAlpha(38),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
+      child: Row(
+        children: [
           Container(
-            width: 1,
-            height: 60,
-            color: AdminDesignSystem.divider,
-            margin: const EdgeInsets.symmetric(
-              horizontal: AdminDesignSystem.spacing12,
+            decoration: BoxDecoration(
+              color: Colors.white.withAlpha(51),
+              borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
             ),
+            padding: const EdgeInsets.all(AdminDesignSystem.spacing12),
+            child: Icon(Icons.emoji_events, color: Colors.white, size: 28),
           ),
+          const SizedBox(width: AdminDesignSystem.spacing12),
           Expanded(
-            child: _buildStatItem(
-              label: 'Remaining',
-              value: formatter.format(remainingAmount),
-              icon: Icons.hourglass_empty,
-              color: AdminDesignSystem.textSecondary,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Goal Achieved! 🎉',
+                  style: AdminDesignSystem.bodyLarge.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AdminDesignSystem.spacing4),
+                Text(
+                  'You\'ve reached your savings target',
+                  style: AdminDesignSystem.bodySmall.copyWith(
+                    color: Colors.white.withAlpha(204),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1080,150 +1383,23 @@ class GeneralSavingsClockModal extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem({
-    required String label,
-    required String value,
-    required IconData icon,
-    required Color color,
-  }) {
-    return Column(
-      children: [
-        Icon(icon, color: color.withAlpha(153), size: 20),
-        const SizedBox(height: AdminDesignSystem.spacing8),
-        Text(label, style: AdminDesignSystem.labelSmall),
-        const SizedBox(height: AdminDesignSystem.spacing4),
-        Text(
-          value,
-          style: AdminDesignSystem.bodyMedium.copyWith(
-            color: color,
-            fontWeight: FontWeight.w700,
-          ),
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildUploadProofButton(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => UploadProofModal(
-              transactionId: '',
-              goalId: '',
-
-              goalTitle: 'General Account Funding',
-              onSuccess: () {
-                Navigator.pop(context); // Close upload modal
-                Navigator.pop(context); // Close savings clock modal
-              },
-              onCancel: () {
-                Navigator.pop(context);
-              },
-            ),
-          );
+  void _showUploadProofModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => UploadProofModal(
+        transactionId: '',
+        goalId: '',
+        goalTitle: 'General Account Funding',
+        onSuccess: () {
+          Navigator.pop(context); // Close upload modal
+          Navigator.pop(context); // Close savings clock modal
         },
-        borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: AdminDesignSystem.accentTeal),
-            borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
-          ),
-          padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.upload_file_outlined,
-                color: AdminDesignSystem.accentTeal,
-                size: 20,
-              ),
-              const SizedBox(width: AdminDesignSystem.spacing8),
-              Text(
-                'Upload Proof of Payment',
-                style: AdminDesignSystem.bodyMedium.copyWith(
-                  color: AdminDesignSystem.accentTeal,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAchievementBanner() {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: const Duration(milliseconds: 600),
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(0, (1 - value) * 20),
-          child: Opacity(opacity: value, child: child),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AdminDesignSystem.statusActive,
-              AdminDesignSystem.statusActive.withAlpha(230),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
-          boxShadow: [
-            BoxShadow(
-              color: AdminDesignSystem.statusActive.withAlpha(38),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(AdminDesignSystem.spacing20),
-        child: Row(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withAlpha(51),
-                borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
-              ),
-              padding: const EdgeInsets.all(AdminDesignSystem.spacing12),
-              child: Icon(Icons.emoji_events, color: Colors.white, size: 32),
-            ),
-            const SizedBox(width: AdminDesignSystem.spacing16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Goal Achieved! 🎉',
-                    style: AdminDesignSystem.bodyLarge.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: AdminDesignSystem.spacing4),
-                  Text(
-                    'You\'ve reached your savings target',
-                    style: AdminDesignSystem.bodySmall.copyWith(
-                      color: Colors.white.withAlpha(204),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        onCancel: () {
+          Navigator.pop(context);
+        },
+        user: widget.user,
       ),
     );
   }
@@ -1245,140 +1421,123 @@ class GeneralSavingsClockModal extends StatelessWidget {
       return '$months ${months == 1 ? 'month' : 'months'} left';
     }
   }
+
+  Color _getStatusColor(bool isCompleted, bool isOverdue) {
+    if (isCompleted) return AdminDesignSystem.statusActive;
+    if (isOverdue) return AdminDesignSystem.statusPending;
+    return AdminDesignSystem.accentTeal;
+  }
 }
 
-// ==================== CLOCK DISPLAY COMPONENT ====================
+// ==================== CLOCK PAINTER ====================
 
-class _ClockDisplay extends StatefulWidget {
-  final int daysRemaining;
-  final bool isCompleted;
-  final bool isOverdue;
+class _GeneralClockPainter extends CustomPainter {
+  final double progressPercent;
+  final Color statusColor;
 
-  const _ClockDisplay({
-    required this.daysRemaining,
-    required this.isCompleted,
-    required this.isOverdue,
+  _GeneralClockPainter({
+    required this.progressPercent,
+    required this.statusColor,
   });
 
   @override
-  State<_ClockDisplay> createState() => _ClockDisplayState();
-}
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
 
-class _ClockDisplayState extends State<_ClockDisplay>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
+    // Background
+    final bgPaint = Paint()
+      ..color = const Color(0xFFF5F7FA)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, radius, bgPaint);
 
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    )..repeat(reverse: true);
-  }
+    // Track
+    final trackPaint = Paint()
+      ..color = const Color(0xFFE5E7EB)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 12
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(center, radius - 20, trackPaint);
 
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
-  }
+    // Progress arc
+    final progressPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 16
+      ..strokeCap = StrokeCap.round;
 
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _pulseController,
-      builder: (context, child) {
-        return Container(
-          padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
-          decoration: BoxDecoration(
-            color: Colors.white.withAlpha(
-              (25 + (_pulseController.value * 15)).toInt(),
-            ),
-            borderRadius: BorderRadius.circular(AdminDesignSystem.radius16),
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Clock icon
-              Icon(Icons.watch_later_outlined, color: Colors.white, size: 48),
-              // Badge for status
-              if (widget.daysRemaining > 0 && !widget.isCompleted)
-                Positioned(
-                  right: -4,
-                  top: -4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AdminDesignSystem.spacing8,
-                      vertical: AdminDesignSystem.spacing4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AdminDesignSystem.statusActive,
-                      borderRadius: BorderRadius.circular(
-                        AdminDesignSystem.radius8,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AdminDesignSystem.statusActive.withAlpha(51),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      '${widget.daysRemaining}d',
-                      style: AdminDesignSystem.labelSmall.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                )
-              else if (widget.isCompleted)
-                Positioned(
-                  right: -4,
-                  top: -4,
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: AdminDesignSystem.statusActive,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AdminDesignSystem.statusActive.withAlpha(51),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Icon(Icons.check, size: 16, color: Colors.white),
-                  ),
-                )
-              else if (widget.isOverdue)
-                Positioned(
-                  right: -4,
-                  top: -4,
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: AdminDesignSystem.statusError,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AdminDesignSystem.statusError.withAlpha(51),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Icon(Icons.warning, size: 16, color: Colors.white),
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
+    final progressRect = Rect.fromCircle(center: center, radius: radius - 45);
+    progressPaint.shader = SweepGradient(
+      startAngle: -math.pi / 2,
+      colors: [statusColor.withAlpha(179), statusColor, statusColor],
+      stops: const [0.0, 0.5, 1.0],
+      transform: const GradientRotation(-math.pi / 2),
+    ).createShader(progressRect);
+
+    final progressArc = math.pi * 2 * progressPercent;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius - 45),
+      -math.pi / 2,
+      progressArc,
+      false,
+      progressPaint,
     );
+
+    // Markers
+    final markerPaint = Paint()
+      ..color = const Color(0xFFD1D5DB)
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+
+    for (int i = 0; i < 12; i++) {
+      final angle = (i / 12) * math.pi * 2 - math.pi / 2;
+      final isQuarter = i % 3 == 0;
+      final outerRadius = radius - 6;
+      final innerRadius = isQuarter ? radius - 14 : radius - 10;
+
+      final outer = Offset(
+        center.dx + outerRadius * math.cos(angle),
+        center.dy + outerRadius * math.sin(angle),
+      );
+      final inner = Offset(
+        center.dx + innerRadius * math.cos(angle),
+        center.dy + innerRadius * math.sin(angle),
+      );
+
+      markerPaint.strokeWidth = isQuarter ? 3 : 2;
+      markerPaint.color = isQuarter
+          ? const Color(0xFF9CA3AF)
+          : const Color(0xFFD1D5DB);
+      canvas.drawLine(inner, outer, markerPaint);
+    }
+
+    // Progress indicator
+    if (progressPercent > 0) {
+      final progressAngle = -math.pi / 2 + (math.pi * 2 * progressPercent);
+      final progressIndicatorPos = Offset(
+        center.dx + (radius - 45) * math.cos(progressAngle),
+        center.dy + (radius - 45) * math.sin(progressAngle),
+      );
+
+      final glowPaint = Paint()
+        ..color = statusColor.withAlpha(77)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(progressIndicatorPos, 14, glowPaint);
+
+      final dotPaint = Paint()
+        ..color = statusColor
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(progressIndicatorPos, 8, dotPaint);
+
+      final centerPaint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(progressIndicatorPos, 4, centerPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GeneralClockPainter oldDelegate) {
+    return oldDelegate.progressPercent != progressPercent ||
+        oldDelegate.statusColor != statusColor;
   }
 }

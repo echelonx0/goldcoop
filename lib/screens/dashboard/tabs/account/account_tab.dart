@@ -1,11 +1,11 @@
 // // lib/screens/dashboard/tabs/account/account_tab.dart
 
 // import 'package:flutter/material.dart';
-// import '../../../../components/base/app_card.dart';
-// import '../../../../components/base/app_button.dart';
+// import 'package:delayed_display/delayed_display.dart';
+
 // import '../../../../components/modals/legal_modal.dart';
 // import '../../../../core/coordinators/support_coordinator.dart';
-// import '../../../../core/theme/app_colors.dart';
+// import '../../../../core/theme/admin_design_system.dart';
 // import '../../../../models/user_model.dart';
 // import '../../../../providers/auth_provider.dart';
 // import '../../../../services/firestore_service.dart';
@@ -16,7 +16,6 @@
 // import 'edit-profile/edit_profile_screen.dart';
 // import 'notification_settings_screen.dart';
 // import 'security_settings_screen.dart';
-// import 'widgets/settings_list_tile.dart';
 
 // class AccountTab extends StatelessWidget {
 //   final AuthProvider authProvider;
@@ -39,29 +38,61 @@
 //       builder: (context, snapshot) {
 //         if (snapshot.connectionState == ConnectionState.waiting) {
 //           return Center(
-//             child: CircularProgressIndicator(color: AppColors.primaryOrange),
+//             child: CircularProgressIndicator(
+//               color: AdminDesignSystem.accentTeal,
+//             ),
 //           );
 //         }
 
 //         final user = snapshot.data;
 //         final uid = authProvider.currentUser!.uid;
 
-//         return SingleChildScrollView(
-//           padding: const EdgeInsets.all(AppSpacing.smPlus),
-//           child: Column(
-//             crossAxisAlignment: CrossAxisAlignment.start,
-//             children: [
-//               _buildHeader(),
-//               const SizedBox(height: AppSpacing.lg),
-//               _buildProfileCard(user, context),
-//               const SizedBox(height: AppSpacing.lg),
-//               _buildAccountInfo(user),
-//               const SizedBox(height: AppSpacing.lg),
-//               _buildSettingsSection(context, uid),
-//               const SizedBox(height: AppSpacing.lg),
-//               _buildDangerSection(),
-//             ],
-//           ),
+//         return CustomScrollView(
+//           slivers: [
+//             SliverPadding(
+//               padding: EdgeInsets.all(AdminDesignSystem.spacing16),
+//               sliver: SliverList(
+//                 delegate: SliverChildListDelegate([
+//                   // Header
+//                   DelayedDisplay(
+//                     delay: Duration(milliseconds: 100),
+//                     child: _buildHeader(),
+//                   ),
+//                   SizedBox(height: AdminDesignSystem.spacing24),
+
+//                   // Profile Card
+//                   DelayedDisplay(
+//                     delay: Duration(milliseconds: 180),
+//                     child: _buildProfileCard(user, context),
+//                   ),
+//                   SizedBox(height: AdminDesignSystem.spacing24),
+
+//                   // Account Info
+//                   DelayedDisplay(
+//                     delay: Duration(milliseconds: 260),
+//                     child: _buildAccountInfo(user),
+//                   ),
+//                   SizedBox(height: AdminDesignSystem.spacing24),
+
+//                   // Settings Section with staggered list
+//                   DelayedDisplay(
+//                     delay: Duration(milliseconds: 340),
+//                     child: _buildSettingsSectionHeader(),
+//                   ),
+//                   SizedBox(height: AdminDesignSystem.spacing12),
+//                   _buildSettingsListWithStagger(context, uid),
+//                   SizedBox(height: AdminDesignSystem.spacing24),
+
+//                   // Danger Section
+//                   DelayedDisplay(
+//                     delay: Duration(milliseconds: 800),
+//                     child: _buildDangerSection(),
+//                   ),
+//                   SizedBox(height: AdminDesignSystem.spacing32),
+//                 ]),
+//               ),
+//             ),
+//           ],
 //         );
 //       },
 //     );
@@ -73,18 +104,16 @@
 //       children: [
 //         Text(
 //           'Account Settings',
-//           style: AppTextTheme.heading2.copyWith(
-//             color: AppColors.deepNavy,
-//             fontWeight: FontWeight.bold,
-//             fontSize: 20,
+//           style: AdminDesignSystem.headingLarge.copyWith(
+//             color: AdminDesignSystem.primaryNavy,
+//             fontWeight: FontWeight.w600,
 //           ),
 //         ),
-//         const SizedBox(height: AppSpacing.xs),
+//         SizedBox(height: AdminDesignSystem.spacing8),
 //         Text(
 //           'Manage your profile and preferences',
-//           style: AppTextTheme.bodySmall.copyWith(
-//             color: AppColors.textSecondary,
-//             fontSize: 13,
+//           style: AdminDesignSystem.bodySmall.copyWith(
+//             color: AdminDesignSystem.textSecondary,
 //           ),
 //         ),
 //       ],
@@ -92,7 +121,9 @@
 //   }
 
 //   Widget _buildProfileCard(UserModel? user, BuildContext context) {
-//     return StandardCard(
+//     return Container(
+//       decoration: AdminDesignSystem.cardDecoration,
+//       padding: EdgeInsets.all(AdminDesignSystem.spacing16),
 //       child: Column(
 //         crossAxisAlignment: CrossAxisAlignment.start,
 //         children: [
@@ -100,48 +131,70 @@
 //             children: [
 //               Container(
 //                 decoration: BoxDecoration(
-//                   color: AppColors.primaryOrange.withAlpha(25),
-//                   borderRadius: BorderRadius.circular(12),
+//                   color: AdminDesignSystem.accentTeal.withAlpha(38),
+//                   borderRadius: BorderRadius.circular(
+//                     AdminDesignSystem.radius12,
+//                   ),
 //                 ),
-//                 padding: const EdgeInsets.all(AppSpacing.md),
+//                 padding: EdgeInsets.all(AdminDesignSystem.spacing12),
 //                 child: Icon(
 //                   Icons.account_circle,
 //                   size: 32,
-//                   color: AppColors.primaryOrange,
+//                   color: AdminDesignSystem.accentTeal,
 //                 ),
 //               ),
-//               const SizedBox(width: AppSpacing.md),
+//               SizedBox(width: AdminDesignSystem.spacing12),
 //               Expanded(
 //                 child: Column(
 //                   crossAxisAlignment: CrossAxisAlignment.start,
 //                   children: [
 //                     Text(
 //                       user?.displayName ?? 'User',
-//                       style: AppTextTheme.heading3.copyWith(
-//                         color: AppColors.deepNavy,
-//                         fontSize: 16,
+//                       style: AdminDesignSystem.bodyLarge.copyWith(
+//                         color: AdminDesignSystem.textPrimary,
 //                         fontWeight: FontWeight.w600,
 //                       ),
 //                     ),
-//                     const SizedBox(height: AppSpacing.xs),
+//                     SizedBox(height: AdminDesignSystem.spacing4),
 //                     Text(
 //                       user?.email ?? 'No email',
-//                       style: AppTextTheme.bodySmall.copyWith(
-//                         color: AppColors.textSecondary,
-//                         fontSize: 13,
+//                       style: AdminDesignSystem.bodySmall.copyWith(
+//                         color: AdminDesignSystem.textSecondary,
 //                       ),
 //                     ),
-//                     const SizedBox(height: AppSpacing.xs),
+//                     SizedBox(height: AdminDesignSystem.spacing8),
 //                     _buildKYCBadge(user?.kycStatus ?? KYCStatus.pending),
 //                   ],
 //                 ),
 //               ),
 //             ],
 //           ),
-//           const SizedBox(height: AppSpacing.lg),
-//           PrimaryButton(
-//             label: 'Edit Profile',
-//             onPressed: () => _navigateToEditProfile(context),
+//           SizedBox(height: AdminDesignSystem.spacing16),
+//           SizedBox(
+//             width: double.infinity,
+//             child: ElevatedButton(
+//               onPressed: () => _navigateToEditProfile(context),
+//               style: ElevatedButton.styleFrom(
+//                 backgroundColor: AdminDesignSystem.accentTeal,
+//                 foregroundColor: Colors.white,
+//                 padding: EdgeInsets.symmetric(
+//                   vertical: AdminDesignSystem.spacing16,
+//                 ),
+//                 shape: RoundedRectangleBorder(
+//                   borderRadius: BorderRadius.circular(
+//                     AdminDesignSystem.radius12,
+//                   ),
+//                 ),
+//                 elevation: 0,
+//               ),
+//               child: Text(
+//                 'Edit Profile',
+//                 style: AdminDesignSystem.bodyMedium.copyWith(
+//                   fontWeight: FontWeight.w600,
+//                   color: Colors.white,
+//                 ),
+//               ),
+//             ),
 //           ),
 //         ],
 //       ),
@@ -151,59 +204,68 @@
 //   Widget _buildKYCBadge(KYCStatus status) {
 //     final badgeData = AccountTabController.getKYCBadgeData(status);
 
-//     return Container(
-//       padding: const EdgeInsets.symmetric(
-//         horizontal: AppSpacing.sm,
-//         vertical: AppSpacing.xs,
-//       ),
-//       decoration: BoxDecoration(
-//         color: badgeData.color.withAlpha(25),
-//         borderRadius: BorderRadius.circular(AppBorderRadius.small),
-//       ),
-//       child: Row(
-//         mainAxisSize: MainAxisSize.min,
-//         children: [
-//           Icon(badgeData.icon, size: 12, color: badgeData.color),
-//           const SizedBox(width: AppSpacing.xs),
-//           Text(
-//             badgeData.text,
-//             style: TextStyle(
-//               color: badgeData.color,
-//               fontSize: 11,
-//               fontWeight: FontWeight.w600,
-//             ),
+//     return Row(
+//       mainAxisSize: MainAxisSize.min,
+//       children: [
+//         Container(
+//           width: 6,
+//           height: 6,
+//           decoration: BoxDecoration(
+//             color: badgeData.color,
+//             shape: BoxShape.circle,
 //           ),
-//         ],
-//       ),
+//         ),
+//         SizedBox(width: AdminDesignSystem.spacing4),
+//         Text(
+//           badgeData.text,
+//           style: AdminDesignSystem.labelSmall.copyWith(
+//             color: badgeData.color,
+//             fontWeight: FontWeight.w600,
+//           ),
+//         ),
+//       ],
 //     );
 //   }
 
 //   Widget _buildAccountInfo(UserModel? user) {
 //     if (user == null) return const SizedBox.shrink();
 
-//     return StandardCard(
+//     return Container(
+//       decoration: AdminDesignSystem.cardDecoration,
+//       padding: EdgeInsets.all(AdminDesignSystem.spacing16),
 //       child: Column(
 //         crossAxisAlignment: CrossAxisAlignment.start,
 //         children: [
-//           Text(
-//             'Account Information',
-//             style: AppTextTheme.heading3.copyWith(
-//               color: AppColors.deepNavy,
-//               fontWeight: FontWeight.w600,
-//               fontSize: 14,
-//             ),
+//           Row(
+//             children: [
+//               Text(
+//                 'Account Information',
+//                 style: AdminDesignSystem.headingMedium.copyWith(
+//                   color: AdminDesignSystem.primaryNavy,
+//                   fontWeight: FontWeight.w600,
+//                 ),
+//               ),
+//               SizedBox(height: AdminDesignSystem.spacing12),
+//               Text(
+//                 'Advanced',
+//                 style: AdminDesignSystem.headingMedium.copyWith(
+//                   color: AdminDesignSystem.primaryNavy,
+//                   fontWeight: FontWeight.w600,
+//                 ),
+//               ),
+//             ],
 //           ),
-//           const SizedBox(height: AppSpacing.md),
+//           SizedBox(height: AdminDesignSystem.spacing16),
 //           _buildInfoRow(
 //             'Phone Number',
 //             AccountTabController.getPhoneDisplay(user),
 //           ),
-//           const SizedBox(height: AppSpacing.sm),
+//           SizedBox(height: AdminDesignSystem.spacing12),
 //           _buildInfoRow(
 //             'Country',
 //             AccountTabController.getCountryDisplay(user),
 //           ),
-//           const SizedBox(height: AppSpacing.sm),
+//           SizedBox(height: AdminDesignSystem.spacing12),
 //           _buildInfoRow(
 //             'Account Status',
 //             AccountTabController.getAccountStatusDisplay(user),
@@ -211,7 +273,7 @@
 //               user.accountStatus,
 //             ),
 //           ),
-//           const SizedBox(height: AppSpacing.sm),
+//           SizedBox(height: AdminDesignSystem.spacing12),
 //           _buildInfoRow(
 //             'Member Since',
 //             AccountTabController.formatDate(user.createdAt),
@@ -227,115 +289,201 @@
 //       children: [
 //         Text(
 //           label,
-//           style: AppTextTheme.bodySmall.copyWith(
-//             color: AppColors.textSecondary,
-//             fontSize: 13,
+//           style: AdminDesignSystem.labelMedium.copyWith(
+//             color: AdminDesignSystem.textSecondary,
 //           ),
 //         ),
 //         Text(
 //           value,
-//           style: AppTextTheme.bodySmall.copyWith(
-//             color: statusColor ?? AppColors.deepNavy,
+//           style: AdminDesignSystem.bodyMedium.copyWith(
+//             color: statusColor ?? AdminDesignSystem.textPrimary,
 //             fontWeight: FontWeight.w600,
-//             fontSize: 13,
 //           ),
 //         ),
 //       ],
 //     );
 //   }
 
-//   Widget _buildSettingsSection(BuildContext context, String uid) {
+//   Widget _buildSettingsSectionHeader() {
 //     return Column(
 //       crossAxisAlignment: CrossAxisAlignment.start,
 //       children: [
 //         Text(
 //           'Settings',
-//           style: AppTextTheme.heading3.copyWith(
-//             color: AppColors.deepNavy,
-//             fontSize: 16,
+//           style: AdminDesignSystem.headingMedium.copyWith(
+//             color: AdminDesignSystem.primaryNavy,
 //             fontWeight: FontWeight.w600,
 //           ),
 //         ),
-//         const SizedBox(height: AppSpacing.md),
-//         StandardCard(
-//           child: Column(
-//             children: [
-//               SettingsListTile(
-//                 icon: Icons.admin_panel_settings,
-//                 title: 'Admin Dashboard',
-//                 subtitle: 'Manage investments and users',
-//                 iconColor: AppColors.deepNavy,
-//                 onTap: () => _navigateToAdmin(context),
-//               ),
-//               const SettingsListDivider(),
-//               SettingsListTile(
-//                 icon: Icons.lock_outline,
-//                 title: 'Change Password',
-//                 subtitle: 'Update your password regularly',
-//                 onTap: () => _navigateToChangePassword(context),
-//               ),
-//               const SettingsListDivider(),
-//               SettingsListTile(
-//                 icon: Icons.notifications_outlined,
-//                 title: 'Notifications',
-//                 subtitle: 'Manage notification preferences',
-//                 onTap: () => _navigateToNotifications(context, uid),
-//               ),
-//               const SettingsListDivider(),
-//               SettingsListTile(
-//                 icon: Icons.security_outlined,
-//                 title: 'Security',
-//                 subtitle: 'Two-factor authentication & more',
-//                 onTap: () => _navigateToSecurity(context, uid),
-//               ),
-//               const SettingsListDivider(),
-//               SettingsListTile(
-//                 icon: Icons.help_outline,
-//                 title: 'Help & Support',
-//                 subtitle: 'Get help with your account',
-//                 onTap: () => supportCoordinator?.showSupportMenu(),
-//               ),
-//               const SettingsListDivider(),
-//               SettingsListTile(
-//                 icon: Icons.privacy_tip_outlined,
-//                 title: 'Privacy Policy',
-//                 subtitle: 'Review our privacy practices',
-//                 onTap: () =>
-//                     LegalModal.show(context, LegalDocumentType.privacy),
-//               ),
-//               const SettingsListDivider(),
-//               SettingsListTile(
-//                 icon: Icons.description_outlined,
-//                 title: 'Terms & Conditions',
-//                 subtitle: 'View our terms of service',
-//                 onTap: () => LegalModal.show(context, LegalDocumentType.terms),
-//               ),
-//             ],
+//         SizedBox(height: AdminDesignSystem.spacing4),
+//         Text(
+//           'Customize your experience',
+//           style: AdminDesignSystem.bodySmall.copyWith(
+//             color: AdminDesignSystem.textSecondary,
 //           ),
 //         ),
 //       ],
 //     );
 //   }
 
-//   Widget _buildDangerSection() {
-//     return StandardCard(
+//   Widget _buildSettingsListWithStagger(BuildContext context, String uid) {
+//     final settingsItems = [
+//       _SettingItem(
+//         icon: Icons.admin_panel_settings,
+//         title: 'Admin Dashboard',
+//         subtitle: 'Manage investments and users',
+//         onTap: () => _navigateToAdmin(context),
+//       ),
+//       _SettingItem(
+//         icon: Icons.lock_outline,
+//         title: 'Change Password',
+//         subtitle: 'Update your password regularly',
+//         onTap: () => _navigateToChangePassword(context),
+//       ),
+//       _SettingItem(
+//         icon: Icons.notifications_outlined,
+//         title: 'Notifications',
+//         subtitle: 'Manage notification preferences',
+//         onTap: () => _navigateToNotifications(context, uid),
+//       ),
+//       _SettingItem(
+//         icon: Icons.security_outlined,
+//         title: 'Security',
+//         subtitle: 'Two-factor authentication & more',
+//         onTap: () => _navigateToSecurity(context, uid),
+//       ),
+//       _SettingItem(
+//         icon: Icons.help_outline,
+//         title: 'Help & Support',
+//         subtitle: 'Get help with your account',
+//         onTap: () => supportCoordinator?.showSupportMenu(),
+//       ),
+//       _SettingItem(
+//         icon: Icons.privacy_tip_outlined,
+//         title: 'Privacy Policy',
+//         subtitle: 'Review our privacy practices',
+//         onTap: () => LegalModal.show(context, LegalDocumentType.privacy),
+//       ),
+//       _SettingItem(
+//         icon: Icons.description_outlined,
+//         title: 'Terms & Conditions',
+//         subtitle: 'View our terms of service',
+//         onTap: () => LegalModal.show(context, LegalDocumentType.terms),
+//       ),
+//     ];
+
+//     return Container(
+//       decoration: AdminDesignSystem.cardDecoration,
 //       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           SizedBox(
-//             width: double.infinity,
-//             child: OutlinedButton.icon(
-//               onPressed: onSignOut,
-//               icon: const Icon(Icons.logout, size: 18),
-//               label: const Text('Sign Out'),
-//               style: OutlinedButton.styleFrom(
-//                 foregroundColor: AppColors.primaryOrangeActive,
-//                 side: BorderSide(color: AppColors.softAmber),
-//                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-//               ),
+//         children: List.generate(
+//           settingsItems.length,
+//           (index) => DelayedDisplay(
+//             delay: Duration(milliseconds: 420 + (index * 80)),
+//             child: Column(
+//               children: [
+//                 _buildSettingsTile(settingsItems[index]),
+//                 if (index < settingsItems.length - 1)
+//                   Divider(
+//                     color: AdminDesignSystem.background,
+//                     height: 1,
+//                     thickness: 1,
+//                   ),
+//               ],
 //             ),
 //           ),
-//         ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildSettingsTile(_SettingItem item) {
+//     return Material(
+//       color: Colors.transparent,
+//       child: InkWell(
+//         onTap: item.onTap,
+//         child: Padding(
+//           padding: EdgeInsets.symmetric(
+//             horizontal: AdminDesignSystem.spacing16,
+//             vertical: AdminDesignSystem.spacing16,
+//           ),
+//           child: Row(
+//             children: [
+//               Container(
+//                 decoration: BoxDecoration(
+//                   color: AdminDesignSystem.accentTeal.withAlpha(38),
+//                   borderRadius: BorderRadius.circular(
+//                     AdminDesignSystem.radius12,
+//                   ),
+//                 ),
+//                 padding: EdgeInsets.all(AdminDesignSystem.spacing8),
+//                 child: Icon(
+//                   item.icon,
+//                   color: AdminDesignSystem.accentTeal,
+//                   size: 20,
+//                 ),
+//               ),
+//               SizedBox(width: AdminDesignSystem.spacing12),
+//               Expanded(
+//                 child: Column(
+//                   crossAxisAlignment: CrossAxisAlignment.start,
+//                   children: [
+//                     Text(
+//                       item.title,
+//                       style: AdminDesignSystem.bodyMedium.copyWith(
+//                         color: AdminDesignSystem.textPrimary,
+//                         fontWeight: FontWeight.w500,
+//                       ),
+//                     ),
+//                     SizedBox(height: AdminDesignSystem.spacing4),
+//                     Text(
+//                       item.subtitle,
+//                       style: AdminDesignSystem.bodySmall.copyWith(
+//                         color: AdminDesignSystem.textSecondary,
+//                       ),
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//               Icon(
+//                 Icons.chevron_right,
+//                 color: AdminDesignSystem.textTertiary,
+//                 size: 20,
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildDangerSection() {
+//     return Container(
+//       decoration: AdminDesignSystem.cardDecoration,
+//       padding: EdgeInsets.all(AdminDesignSystem.spacing16),
+//       child: SizedBox(
+//         width: double.infinity,
+//         child: OutlinedButton.icon(
+//           onPressed: onSignOut,
+//           icon: const Icon(Icons.logout, size: 18),
+//           label: Text(
+//             'Sign Out',
+//             style: AdminDesignSystem.bodyMedium.copyWith(
+//               fontWeight: FontWeight.w600,
+//             ),
+//           ),
+//           style: OutlinedButton.styleFrom(
+//             foregroundColor: AdminDesignSystem.statusError,
+//             side: BorderSide(
+//               color: AdminDesignSystem.statusError.withAlpha(51),
+//             ),
+//             padding: EdgeInsets.symmetric(
+//               vertical: AdminDesignSystem.spacing16,
+//             ),
+//             shape: RoundedRectangleBorder(
+//               borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
+//             ),
+//           ),
+//         ),
 //       ),
 //     );
 //   }
@@ -386,6 +534,20 @@
 //   }
 // }
 
+// // ==================== INTERNAL MODEL ====================
+// class _SettingItem {
+//   final IconData icon;
+//   final String title;
+//   final String subtitle;
+//   final VoidCallback? onTap;
+
+//   _SettingItem({
+//     required this.icon,
+//     required this.title,
+//     required this.subtitle,
+//     this.onTap,
+//   });
+// }
 // lib/screens/dashboard/tabs/account/account_tab.dart
 
 import 'package:flutter/material.dart';
@@ -404,6 +566,7 @@ import 'controllers/account_tab_controller.dart';
 import 'edit-profile/edit_profile_screen.dart';
 import 'notification_settings_screen.dart';
 import 'security_settings_screen.dart';
+import 'widgets/account_info_card.dart';
 
 class AccountTab extends StatelessWidget {
   final AuthProvider authProvider;
@@ -455,10 +618,10 @@ class AccountTab extends StatelessWidget {
                   ),
                   SizedBox(height: AdminDesignSystem.spacing24),
 
-                  // Account Info
+                  // Account Info with Advanced KYC prompt
                   DelayedDisplay(
                     delay: Duration(milliseconds: 260),
-                    child: _buildAccountInfo(user),
+                    child: AccountInfoCard(user: user),
                   ),
                   SizedBox(height: AdminDesignSystem.spacing24),
 
@@ -608,71 +771,6 @@ class AccountTab extends StatelessWidget {
           badgeData.text,
           style: AdminDesignSystem.labelSmall.copyWith(
             color: badgeData.color,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAccountInfo(UserModel? user) {
-    if (user == null) return const SizedBox.shrink();
-
-    return Container(
-      decoration: AdminDesignSystem.cardDecoration,
-      padding: EdgeInsets.all(AdminDesignSystem.spacing16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Account Information',
-            style: AdminDesignSystem.headingMedium.copyWith(
-              color: AdminDesignSystem.primaryNavy,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: AdminDesignSystem.spacing16),
-          _buildInfoRow(
-            'Phone Number',
-            AccountTabController.getPhoneDisplay(user),
-          ),
-          SizedBox(height: AdminDesignSystem.spacing12),
-          _buildInfoRow(
-            'Country',
-            AccountTabController.getCountryDisplay(user),
-          ),
-          SizedBox(height: AdminDesignSystem.spacing12),
-          _buildInfoRow(
-            'Account Status',
-            AccountTabController.getAccountStatusDisplay(user),
-            statusColor: AccountTabController.getAccountStatusColor(
-              user.accountStatus,
-            ),
-          ),
-          SizedBox(height: AdminDesignSystem.spacing12),
-          _buildInfoRow(
-            'Member Since',
-            AccountTabController.formatDate(user.createdAt),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value, {Color? statusColor}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: AdminDesignSystem.labelMedium.copyWith(
-            color: AdminDesignSystem.textSecondary,
-          ),
-        ),
-        Text(
-          value,
-          style: AdminDesignSystem.bodyMedium.copyWith(
-            color: statusColor ?? AdminDesignSystem.textPrimary,
             fontWeight: FontWeight.w600,
           ),
         ),
