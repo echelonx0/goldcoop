@@ -90,12 +90,8 @@ class _FiatBalanceCardState extends State<FiatBalanceCard>
               transactionId: '',
               goalId: '',
               goalTitle: 'Account Funding',
-              user: widget.user, // ✅ Pass user here
-              onSuccess: () {
-                _showSuccessSnackbar(
-                  'Deposit confirmed! Check your dashboard.',
-                );
-              },
+              user: widget.user,
+
               onCancel: () {
                 Navigator.pop(context);
               },
@@ -103,17 +99,6 @@ class _FiatBalanceCardState extends State<FiatBalanceCard>
           );
         },
         onClose: () => Navigator.pop(context),
-      ),
-    );
-  }
-
-  void _showSuccessSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AdminDesignSystem.statusActive,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
       ),
     );
   }

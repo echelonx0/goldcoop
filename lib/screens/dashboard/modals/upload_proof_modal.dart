@@ -20,7 +20,7 @@ class UploadProofModal extends StatefulWidget {
   final double initialAmount;
   final String? goalTitle;
   final UserModel user;
-  final VoidCallback onSuccess;
+
   final VoidCallback onCancel;
 
   const UploadProofModal({
@@ -30,7 +30,6 @@ class UploadProofModal extends StatefulWidget {
     this.initialAmount = 0,
     this.goalTitle,
     required this.user,
-    required this.onSuccess,
     required this.onCancel,
   });
 
@@ -176,36 +175,6 @@ class _UploadProofModalState extends State<UploadProofModal> {
         amount: _enteredAmount,
       );
 
-      // if (result.success) {
-      //   if (!mounted) return;
-
-      //   // 1. Release keyboard focus
-      //   FocusScope.of(context).unfocus();
-
-      //   // 2. Close bottom sheet
-      //   Navigator.of(context).pop();
-
-      //   // 3. Allow keyboard + sheet animation to complete
-      //   await Future.delayed(const Duration(milliseconds: 300));
-
-      //   if (!mounted) return;
-
-      //   // 4. Navigate from root
-      //   Navigator.of(context, rootNavigator: true).push(
-      //     MaterialPageRoute(
-      //       builder: (_) => DepositSuccessScreen(
-      //         user: widget.user,
-      //         depositAmount: _enteredAmount,
-      //         goalTitle: widget.goalTitle,
-      //         onDone: () {
-      //           Navigator.of(context, rootNavigator: true).pop();
-      //           widget.onSuccess();
-      //         },
-      //       ),
-      //     ),
-      //   );
-      // }
-
       if (result.success) {
         if (!mounted) return;
 
@@ -230,7 +199,6 @@ class _UploadProofModalState extends State<UploadProofModal> {
               goalTitle: widget.goalTitle,
               onDone: () {
                 navigator.pop();
-                widget.onSuccess();
               },
             ),
           ),
@@ -246,25 +214,9 @@ class _UploadProofModalState extends State<UploadProofModal> {
     }
   }
 
-  // Future<void> _simulateFileSelection() async {
-  //   final tempDir = Directory.systemTemp;
-  //   final fakeFile = File('${tempDir.path}/fake_receipt.png');
-
-  //   await fakeFile.writeAsBytes(List.generate(100, (i) => i));
-
-  //   setState(() {
-  //     _selectedFile = fakeFile;
-  //     _fileName = 'fake_receipt.png';
-  //     _errorMessage = null;
-  //   });
-  // }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        // FocusManager.instance.primaryFocus?.unfocus();
-      },
       behavior: HitTestBehavior.translucent,
       child: Container(
         decoration: BoxDecoration(

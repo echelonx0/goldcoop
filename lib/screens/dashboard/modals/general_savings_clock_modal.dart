@@ -563,10 +563,7 @@ class GeneralSavingsClockModalState extends State<GeneralSavingsClockModal>
         transactionId: '',
         goalId: '',
         goalTitle: 'General Account Funding',
-        onSuccess: () {
-          Navigator.pop(context); // Close upload modal
-          Navigator.pop(context); // Close savings clock modal
-        },
+
         onCancel: () {
           Navigator.pop(context);
         },
