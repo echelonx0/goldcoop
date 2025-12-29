@@ -311,7 +311,7 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen>
                   Expanded(
                     child: _buildDetailItem(
                       'User ID',
-                      proof.userId.substring(0, 8) + '...',
+                      '${proof.userId.substring(0, 8)}...',
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),

@@ -96,7 +96,7 @@ class ProofDetailModal extends StatelessWidget {
                       child: Column(
                         children: [
                           Text(
-                            'â‚¦${currencyFormatter.format(amount)}',
+                            'N${currencyFormatter.format(amount)}',
                             style: AppTextTheme.display.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,

@@ -36,7 +36,36 @@ class MyApp extends StatelessWidget {
         home: const SplashScreen(),
         onGenerateRoute: AppRouter.onGenerateRoute,
         onUnknownRoute: AppRouter.onUnknownRoute,
+        builder: (context, child) {
+          // Wrap entire app with keyboard dismissal
+          return DismissKeyboardWrapper(child: child!);
+        },
       ),
+    );
+  }
+}
+
+/// Wraps the entire app to dismiss keyboard when user taps outside text fields.
+/// Handles tap gestures on non-interactive areas and unfocuses text input.
+class DismissKeyboardWrapper extends StatelessWidget {
+  final Widget child;
+
+  const DismissKeyboardWrapper({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        // Unfocus current focus node (dismisses keyboard)
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      // Important: onTapDown allows the gesture to be registered before
+      // other widgets in the tree process the tap
+      onTapDown: (_) {
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      behavior: HitTestBehavior.translucent,
+      child: child,
     );
   }
 }
