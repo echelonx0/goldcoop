@@ -38,6 +38,10 @@ class _DepositSuccessScreenState extends State<DepositSuccessScreen>
   @override
   void initState() {
     super.initState();
+    // Force dismiss any lingering keyboard
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FocusManager.instance.primaryFocus?.unfocus();
+    });
     _controller = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -64,8 +68,8 @@ class _DepositSuccessScreenState extends State<DepositSuccessScreen>
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false, // Prevent back navigation
+    return PopScope(
+      canPop: false, // Prevent back navigation
       child: Scaffold(
         backgroundColor: AdminDesignSystem.background,
         body: SafeArea(

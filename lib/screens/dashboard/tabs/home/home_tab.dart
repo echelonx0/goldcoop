@@ -851,9 +851,9 @@ class _ActionCardsGrid extends StatelessWidget {
       stream: goalsStream,
       builder: (context, snapshot) {
         final goals = snapshot.data ?? [];
-        final activeGoals = goals
-            .where((g) => g.status == GoalStatus.active)
-            .toList();
+        // final activeGoals = goals
+        //     .where((g) => g.status == GoalStatus.active)
+        //     .toList();
 
         return GridView.count(
           crossAxisCount: 2,
