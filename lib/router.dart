@@ -1,12 +1,14 @@
 // lib/config/app_router.dart
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:gsa/screens/admin/dashboard/admin_dashboard.dart';
 import 'package:gsa/screens/auth/login_screen.dart';
 import 'package:gsa/screens/auth/signup_screen.dart';
 import 'package:gsa/screens/auth/password_reset_screen.dart';
 import 'package:gsa/screens/dashboard/dashboard_screen.dart';
 import 'package:gsa/screens/investments/investments_screen.dart';
+import 'package:gsa/screens/investments/investments_landing_screen.dart';
 import 'package:gsa/screens/onboarding/splash_screen.dart';
 import 'package:gsa/screens/onboarding/onboarding_carousel.dart';
 
@@ -50,7 +52,9 @@ class AppRouter {
       case invest:
         final args = settings.arguments as Map<String, dynamic>?;
         final uid = args?['uid'] as String? ?? '';
-        return MaterialPageRoute(builder: (_) => InvestmentsScreen(uid: uid));
+        return MaterialPageRoute(
+          builder: (_) => _InvestmentsRouteBuilder(uid: uid),
+        );
 
       case admin:
         return MaterialPageRoute(
@@ -66,5 +70,52 @@ class AppRouter {
 
   static Route<dynamic>? onUnknownRoute(RouteSettings settings) {
     return MaterialPageRoute(builder: (_) => const LoginScreen());
+  }
+}
+
+/// Route builder that checks if user has seen investments landing screen
+class _InvestmentsRouteBuilder extends StatefulWidget {
+  final String uid;
+
+  const _InvestmentsRouteBuilder({required this.uid});
+
+  @override
+  State<_InvestmentsRouteBuilder> createState() =>
+      _InvestmentsRouteBuilderState();
+}
+
+class _InvestmentsRouteBuilderState extends State<_InvestmentsRouteBuilder> {
+  bool _isLoading = true;
+  bool _hasSeenLanding = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLandingStatus();
+  }
+
+  Future<void> _checkLandingStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasSeenLanding = prefs.getBool('hasSeenInvestmentsLanding') ?? false;
+
+    if (mounted) {
+      setState(() {
+        _hasSeenLanding = hasSeenLanding;
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      // Show minimal loading indicator while checking preference
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    // Return appropriate screen based on landing status
+    return _hasSeenLanding
+        ? InvestmentsScreen(uid: widget.uid)
+        : InvestmentsLandingScreen(uid: widget.uid);
   }
 }

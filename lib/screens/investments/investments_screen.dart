@@ -1,11 +1,13 @@
-// lib/screens/investments/screens/investments_screen.dart
+// lib/screens/investments/investments_screen.dart
 
 import 'package:flutter/material.dart';
-import '../../components/base/app_card.dart';
-import '../../components/base/app_button.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/investment_plan_model.dart';
+import '../../models/investment_category.dart';
 import '../../services/investment_plan_service.dart';
+import 'widgets/investment_plan_card.dart';
+import 'widgets/featured_plan_carousel.dart';
+import 'widgets/investment_filter_sheet.dart';
 import 'investment_checkout_screen.dart';
 
 class InvestmentsScreen extends StatefulWidget {
@@ -17,13 +19,20 @@ class InvestmentsScreen extends StatefulWidget {
   State<InvestmentsScreen> createState() => _InvestmentsScreenState();
 }
 
-class _InvestmentsScreenState extends State<InvestmentsScreen> {
+class _InvestmentsScreenState extends State<InvestmentsScreen>
+    with SingleTickerProviderStateMixin {
   late final InvestmentPlanService _planService;
   final TextEditingController _searchController = TextEditingController();
 
-  // ROI calculator state
-  final Map<String, double> _investmentAmounts = {};
-  final Map<String, int> _investmentMonths = {};
+  // Filter state (not persisted)
+  double _minInvestmentFilter = 0;
+  double _maxInvestmentFilter = 10000000;
+  double _minReturnFilter = 0;
+  int _minDurationFilter = 1;
+  int _maxDurationFilter = 24;
+
+  // Tab state
+  InvestmentCategory? _selectedCategory;
 
   @override
   void initState() {
@@ -37,31 +46,59 @@ class _InvestmentsScreenState extends State<InvestmentsScreen> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundNeutral,
-      appBar: _buildAppBar(),
-      body: Column(
-        children: [
-          _buildSearchBar(),
-          Expanded(child: _buildContent()),
-        ],
+  void _showFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => InvestmentFilterSheet(
+        minInvestment: _minInvestmentFilter,
+        maxInvestment: _maxInvestmentFilter,
+        minReturn: _minReturnFilter,
+        minDuration: _minDurationFilter,
+        maxDuration: _maxDurationFilter,
+        onApply: (minInv, maxInv, minRet, minDur, maxDur) {
+          setState(() {
+            _minInvestmentFilter = minInv;
+            _maxInvestmentFilter = maxInv;
+            _minReturnFilter = minRet;
+            _minDurationFilter = minDur;
+            _maxDurationFilter = maxDur;
+          });
+        },
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      title: Text(
-        'Investment Plans',
-        style: AppTextTheme.heading2.copyWith(
-          color: AppColors.deepNavy,
-          fontSize: 14,
-        ),
+  void _showPlanDetails(InvestmentPlanModel plan) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildDetailsSheet(plan),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundNeutral,
+      body: CustomScrollView(
+        slivers: [_buildAppBar(), _buildSearchAndFilter(), _buildContent()],
       ),
+    );
+  }
+
+  Widget _buildAppBar() {
+    return SliverAppBar(
+      floating: true,
+      pinned: false,
       elevation: 0,
       backgroundColor: AppColors.backgroundWhite,
+      title: Text(
+        'Investment Plans',
+        style: AppTextTheme.heading2.copyWith(color: AppColors.deepNavy),
+      ),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back),
         onPressed: () => Navigator.pop(context),
@@ -70,35 +107,61 @@ class _InvestmentsScreenState extends State<InvestmentsScreen> {
     );
   }
 
-  Widget _buildSearchBar() {
-    return Container(
-      color: AppColors.backgroundWhite,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: TextField(
-        controller: _searchController,
-        onChanged: (_) => setState(() {}),
-        decoration: InputDecoration(
-          hintText: 'Search plans',
-          prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-            borderSide: const BorderSide(color: AppColors.borderLight),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-            borderSide: const BorderSide(color: AppColors.borderLight),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-            borderSide: const BorderSide(
-              color: AppColors.primaryOrange,
-              width: 2,
+  Widget _buildSearchAndFilter() {
+    return SliverToBoxAdapter(
+      child: Container(
+        color: AppColors.backgroundWhite,
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          0,
+          AppSpacing.md,
+          AppSpacing.md,
+        ),
+        child: Row(
+          children: [
+            // Search field
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: 'Search plans',
+                  hintStyle: AppTextTheme.bodySmall.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
+                  filled: true,
+                  fillColor: AppColors.backgroundNeutral,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                ),
+              ),
             ),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
+
+            const SizedBox(width: AppSpacing.sm),
+
+            // Filter button
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.primaryOrange,
+                borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.tune, color: Colors.white),
+                onPressed: _showFilterSheet,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -109,35 +172,23 @@ class _InvestmentsScreenState extends State<InvestmentsScreen> {
       stream: _planService.getActivePlansStream(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(color: AppColors.primaryOrange),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 48, color: AppColors.warmRed),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  'Failed to load plans',
-                  style: AppTextTheme.bodyRegular.copyWith(
-                    color: AppColors.warmRed,
-                  ),
-                ),
-              ],
+          return SliverFillRemaining(
+            child: Center(
+              child: CircularProgressIndicator(color: AppColors.primaryOrange),
             ),
           );
         }
 
-        var plans = snapshot.data ?? [];
+        if (snapshot.hasError) {
+          return SliverFillRemaining(child: _buildErrorState());
+        }
 
-        // Apply search filter
+        var allPlans = snapshot.data ?? [];
+
+        // Apply search
         final searchTerm = _searchController.text.toLowerCase();
         if (searchTerm.isNotEmpty) {
-          plans = plans
+          allPlans = allPlans
               .where(
                 (plan) =>
                     plan.planName.toLowerCase().contains(searchTerm) ||
@@ -146,69 +197,130 @@ class _InvestmentsScreenState extends State<InvestmentsScreen> {
               .toList();
         }
 
-        if (plans.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.search_off,
-                  size: 48,
-                  color: AppColors.textSecondary,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  'No plans found',
-                  style: AppTextTheme.bodyRegular.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          );
+        // Apply filters
+        allPlans = allPlans.where((plan) {
+          return plan.minimumInvestment >= _minInvestmentFilter &&
+              plan.maximumInvestment <= _maxInvestmentFilter &&
+              plan.expectedAnnualReturn >= _minReturnFilter &&
+              plan.durationMonths >= _minDurationFilter &&
+              plan.durationMonths <= _maxDurationFilter;
+        }).toList();
+
+        if (allPlans.isEmpty) {
+          return SliverFillRemaining(child: _buildEmptyState());
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          itemCount: plans.length,
-          itemBuilder: (context, index) =>
-              _buildPlanCard(context, plans[index]),
+        // Separate featured plans
+        final featuredPlans = allPlans.where((p) => p.isFeatured).toList();
+        final regularPlans = allPlans.where((p) => !p.isFeatured).toList();
+
+        // Categorize regular plans
+        final categorizedPlans = _categorizePlans(regularPlans);
+
+        return SliverList(
+          delegate: SliverChildListDelegate([
+            // Featured carousel
+            if (featuredPlans.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                ),
+                child: FeaturedPlanCarousel(
+                  featuredPlans: featuredPlans,
+                  onPlanTap: _showPlanDetails,
+                ),
+              ),
+            ],
+
+            // Category tabs
+            _buildCategoryTabs(categorizedPlans),
+
+            // Plans list
+            _buildPlansList(categorizedPlans),
+          ]),
         );
       },
     );
   }
 
-  Widget _buildPlanCard(BuildContext context, InvestmentPlanModel plan) {
-    final isFeatured = plan.isFeatured;
+  Map<InvestmentCategory, List<InvestmentPlanModel>> _categorizePlans(
+    List<InvestmentPlanModel> plans,
+  ) {
+    final categorized = <InvestmentCategory, List<InvestmentPlanModel>>{};
 
-    return GestureDetector(
-      onTap: () => _showPlanDetails(context, plan),
-      child: StandardCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Featured badge
-            if (isFeatured)
-              Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+    for (var plan in plans) {
+      final category = InvestmentCategoryExtension.fromDuration(
+        plan.durationMonths,
+      );
+      categorized.putIfAbsent(category, () => []).add(plan);
+    }
+
+    return categorized;
+  }
+
+  Widget _buildCategoryTabs(
+    Map<InvestmentCategory, List<InvestmentPlanModel>> categorizedPlans,
+  ) {
+    // Only show tabs for categories that have plans
+    final availableCategories = InvestmentCategory.values
+        .where((cat) => categorizedPlans[cat]?.isNotEmpty ?? false)
+        .toList();
+
+    if (availableCategories.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.lg,
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: availableCategories.map((category) {
+            final isSelected = _selectedCategory == category;
+            final count = categorizedPlans[category]?.length ?? 0;
+
+            return Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedCategory = isSelected ? null : category;
+                  });
+                },
                 child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.softAmber.withAlpha(25),
-                    borderRadius: BorderRadius.circular(AppBorderRadius.small),
-                  ),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? category.color
+                        : AppColors.backgroundWhite,
+                    borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                    border: Border.all(
+                      color: isSelected
+                          ? category.color
+                          : AppColors.borderLight,
+                    ),
                   ),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.star, size: 14, color: AppColors.softAmber),
-                      const SizedBox(width: 4),
+                      Icon(
+                        category.icon,
+                        size: 18,
+                        color: isSelected ? Colors.white : category.color,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
                       Text(
-                        'Featured',
-                        style: AppTextTheme.micro.copyWith(
-                          color: AppColors.softAmber,
+                        '${category.displayName} ($count)',
+                        style: AppTextTheme.bodySmall.copyWith(
+                          color: isSelected
+                              ? Colors.white
+                              : AppColors.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -216,120 +328,104 @@ class _InvestmentsScreenState extends State<InvestmentsScreen> {
                   ),
                 ),
               ),
-
-            // Plan name
-            Text(
-              plan.planName,
-              style: AppTextTheme.heading3.copyWith(color: AppColors.deepNavy),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-
-            // Description
-            Text(
-              plan.description,
-              style: AppTextTheme.bodySmall.copyWith(
-                color: AppColors.textSecondary,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // Key metrics row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: _buildMetricBadge(
-                    label: 'Range',
-                    value: plan.getInvestmentRangeText(),
-                    valueColor: AppColors.primaryOrange,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: _buildMetricBadge(
-                    label: 'Return',
-                    value: '${plan.expectedAnnualReturn.toStringAsFixed(1)}%',
-                    valueColor: AppColors.tealSuccess,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: _buildMetricBadge(
-                    label: 'Payout',
-                    value: plan.payoutFrequency,
-                    valueColor: AppColors.deepNavy,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // CTA button
-            SizedBox(
-              width: double.infinity,
-              child: PrimaryButton(
-                label: 'View & Invest',
-                onPressed: () => _showPlanDetails(context, plan),
-              ),
-            ),
-          ],
+            );
+          }).toList(),
         ),
       ),
     );
   }
 
-  Widget _buildMetricBadge({
-    required String label,
-    required String value,
-    required Color valueColor,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          label,
-          style: AppTextTheme.bodySmall.copyWith(
-            color: AppColors.textSecondary,
-            fontSize: 11,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: AppTextTheme.bodySmall.copyWith(
-            color: valueColor,
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
-          ),
-          textAlign: TextAlign.center,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
-    );
-  }
-
-  void _showPlanDetails(BuildContext context, InvestmentPlanModel plan) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => _buildDetailsSheet(context, plan),
-    );
-  }
-
-  Widget _buildDetailsSheet(
-    BuildContext parentContext,
-    InvestmentPlanModel plan,
+  Widget _buildPlansList(
+    Map<InvestmentCategory, List<InvestmentPlanModel>> categorizedPlans,
   ) {
+    List<InvestmentPlanModel> plansToShow;
+
+    if (_selectedCategory != null) {
+      plansToShow = categorizedPlans[_selectedCategory] ?? [];
+    } else {
+      plansToShow = categorizedPlans.values.expand((list) => list).toList();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        children: List.generate(
+          plansToShow.length,
+          (index) => Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: 1),
+              duration: Duration(milliseconds: 300 + (index * 100)),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, child) {
+                return Transform.translate(
+                  offset: Offset(0, (1 - value) * 20),
+                  child: Opacity(opacity: value, child: child),
+                );
+              },
+              child: InvestmentPlanCard(
+                plan: plansToShow[index],
+                onTap: () => _showPlanDetails(plansToShow[index]),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 48, color: AppColors.warmRed),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Failed to load plans',
+            style: AppTextTheme.bodyRegular.copyWith(color: AppColors.warmRed),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off, size: 48, color: AppColors.textSecondary),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'No plans found',
+            style: AppTextTheme.bodyRegular.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailsSheet(InvestmentPlanModel plan) {
+    final Map<String, double> investmentAmounts = {};
+    final Map<String, int> investmentMonths = {};
+
     return StatefulBuilder(
       builder: (context, setModalState) {
-        final amount =
-            _investmentAmounts[plan.planId] ?? plan.minimumInvestment;
-        final months = _investmentMonths[plan.planId] ?? plan.durationMonths;
+        // Ensure valid bounds (handle data errors where min > max)
+        final minBound = plan.minimumInvestment;
+        final maxBound = plan.maximumInvestment;
+        final safeMin = minBound < maxBound ? minBound : maxBound;
+        final safeMax = maxBound > minBound ? maxBound : minBound;
+
+        // Ensure valid investment amount
+        final defaultAmount = safeMin;
+        final currentAmount = investmentAmounts[plan.planId] ?? defaultAmount;
+        final amount = currentAmount.clamp(safeMin, safeMax);
+
+        final months = investmentMonths[plan.planId] ?? plan.durationMonths;
         final expectedReturn = plan.calculateExpectedReturn(amount, months);
         final totalValue = amount + expectedReturn;
 
@@ -349,7 +445,6 @@ class _InvestmentsScreenState extends State<InvestmentsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Handle bar
                 Center(
                   child: Container(
                     width: 40,
@@ -362,7 +457,7 @@ class _InvestmentsScreenState extends State<InvestmentsScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
-                // Title & description
+                // Title
                 Text(
                   plan.planName,
                   style: AppTextTheme.heading2.copyWith(
@@ -379,39 +474,6 @@ class _InvestmentsScreenState extends State<InvestmentsScreen> {
 
                 const SizedBox(height: AppSpacing.lg),
 
-                // Key details grid
-                GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: AppSpacing.md,
-                  crossAxisSpacing: AppSpacing.md,
-                  children: [
-                    _buildDetailCard(
-                      'Expected Return',
-                      '${plan.expectedAnnualReturn.toStringAsFixed(1)}% p.a.',
-                      AppColors.tealSuccess,
-                    ),
-                    _buildDetailCard(
-                      'Duration',
-                      '${plan.durationMonths} months',
-                      AppColors.primaryOrange,
-                    ),
-                    _buildDetailCard(
-                      'Min Investment',
-                      _formatCurrency(plan.minimumInvestment),
-                      AppColors.deepNavy,
-                    ),
-                    _buildDetailCard(
-                      'Max Investment',
-                      _formatCurrency(plan.maximumInvestment),
-                      AppColors.primaryOrange,
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: AppSpacing.lg),
-
                 // ROI Calculator
                 _buildROICalculator(
                   setModalState,
@@ -420,43 +482,46 @@ class _InvestmentsScreenState extends State<InvestmentsScreen> {
                   months,
                   expectedReturn,
                   totalValue,
+                  investmentAmounts,
+                  investmentMonths,
                 ),
 
                 const SizedBox(height: AppSpacing.lg),
 
-                // Action buttons
+                // CTA
                 SizedBox(
                   width: double.infinity,
-                  child: PrimaryButton(
-                    label: 'Invest Now',
+                  child: ElevatedButton(
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => InvestmentCheckoutScreen(
-                            uid: widget.uid,
                             plan: plan,
                             investmentAmount: amount,
                           ),
                         ),
                       );
                     },
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                SizedBox(
-                  width: double.infinity,
-                  child: SecondaryButton(
-                    label: 'Request Callback',
-                    onPressed: () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(parentContext).showSnackBar(
-                        const SnackBar(
-                          content: Text('Callback request sent'),
-                          duration: Duration(seconds: 2),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryOrange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.md,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppBorderRadius.medium,
                         ),
-                      );
-                    },
+                      ),
+                    ),
+                    child: Text(
+                      'Invest Now',
+                      style: AppTextTheme.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -474,17 +539,28 @@ class _InvestmentsScreenState extends State<InvestmentsScreen> {
     int months,
     double expectedReturn,
     double totalValue,
+    Map<String, double> investmentAmounts,
+    Map<String, int> investmentMonths,
   ) {
+    // Ensure valid bounds (handle data errors where min > max)
+    final minBound = plan.minimumInvestment;
+    final maxBound = plan.maximumInvestment;
+    final safeMin = minBound < maxBound ? minBound : maxBound;
+    final safeMax = maxBound > minBound ? maxBound : minBound;
+
+    final hasValidRange = safeMax > safeMin;
+    final sliderValue = amount.clamp(safeMin, safeMax);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'ROI Calculator',
+          'Investment Calculator',
           style: AppTextTheme.heading3.copyWith(color: AppColors.deepNavy),
         ),
         const SizedBox(height: AppSpacing.md),
 
-        // Investment amount slider
+        // Amount slider
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -492,7 +568,7 @@ class _InvestmentsScreenState extends State<InvestmentsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Investment Amount',
+                  'Amount',
                   style: AppTextTheme.bodySmall.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -507,66 +583,38 @@ class _InvestmentsScreenState extends State<InvestmentsScreen> {
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
-            Slider(
-              value: amount,
-              min: plan.minimumInvestment,
-              max: plan.maximumInvestment,
-              divisions: 99,
-              onChanged: (value) {
-                setModalState(() {
-                  _investmentAmounts[plan.planId] = value;
-                });
-                setState(() {
-                  _investmentAmounts[plan.planId] = value;
-                });
-              },
-              activeColor: AppColors.primaryOrange,
-              inactiveColor: AppColors.borderLight,
-            ),
-          ],
-        ),
-
-        const SizedBox(height: AppSpacing.md),
-
-        // Duration slider
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Investment Period',
+            if (hasValidRange)
+              Slider(
+                value: sliderValue,
+                min: safeMin,
+                max: safeMax,
+                divisions: 99,
+                onChanged: (value) {
+                  setModalState(() {
+                    investmentAmounts[plan.planId] = value;
+                  });
+                },
+                activeColor: AppColors.primaryOrange,
+                inactiveColor: AppColors.borderLight,
+              )
+            else
+              // Fixed amount (no slider if min == max)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppSpacing.sm,
+                  horizontal: AppSpacing.md,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundNeutral,
+                  borderRadius: BorderRadius.circular(AppBorderRadius.small),
+                ),
+                child: Text(
+                  'Fixed investment amount',
                   style: AppTextTheme.bodySmall.copyWith(
                     color: AppColors.textSecondary,
                   ),
                 ),
-                Text(
-                  '$months months',
-                  style: AppTextTheme.bodySmall.copyWith(
-                    color: AppColors.primaryOrange,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Slider(
-              value: months.toDouble(),
-              min: 1,
-              max: plan.durationMonths.toDouble(),
-              divisions: plan.durationMonths - 1,
-              onChanged: (value) {
-                setModalState(() {
-                  _investmentMonths[plan.planId] = value.toInt();
-                });
-                setState(() {
-                  _investmentMonths[plan.planId] = value.toInt();
-                });
-              },
-              activeColor: AppColors.primaryOrange,
-              inactiveColor: AppColors.borderLight,
-            ),
+              ),
           ],
         ),
 
@@ -582,42 +630,11 @@ class _InvestmentsScreenState extends State<InvestmentsScreen> {
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Principal',
-                    style: AppTextTheme.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  Text(
-                    _formatCurrency(amount),
-                    style: AppTextTheme.bodySmall.copyWith(
-                      color: AppColors.deepNavy,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
+              _buildDetailRow('Principal', _formatCurrency(amount)),
               const SizedBox(height: AppSpacing.sm),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Expected Return',
-                    style: AppTextTheme.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  Text(
-                    _formatCurrency(expectedReturn),
-                    style: AppTextTheme.bodySmall.copyWith(
-                      color: AppColors.tealSuccess,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+              _buildDetailRow(
+                'Expected Return',
+                _formatCurrency(expectedReturn),
               ),
               const SizedBox(height: AppSpacing.md),
               Container(
@@ -650,37 +667,24 @@ class _InvestmentsScreenState extends State<InvestmentsScreen> {
     );
   }
 
-  Widget _buildDetailCard(String label, String value, Color color) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color.withAlpha(12),
-        borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-        border: Border.all(color: color.withAlpha(25)),
-      ),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: AppTextTheme.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-            ),
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppTextTheme.bodySmall.copyWith(
+            color: AppColors.textSecondary,
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            value,
-            style: AppTextTheme.bodyRegular.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+        ),
+        Text(
+          value,
+          style: AppTextTheme.bodySmall.copyWith(
+            color: AppColors.tealSuccess,
+            fontWeight: FontWeight.w600,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

@@ -215,53 +215,6 @@ class FirestoreService {
     }
   }
 
-  /// Update user financial profile
-  Future<bool> updateFinancialProfile({
-    required String uid,
-    double? accountBalance,
-    double? totalInvested,
-    double? totalReturns,
-    int? tokenBalance,
-    double? savingsTarget,
-  }) async {
-    try {
-      final updates = <String, dynamic>{
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
-
-      if (accountBalance != null) {
-        updates['financialProfile.accountBalance'] = accountBalance;
-      }
-      if (totalInvested != null) {
-        updates['financialProfile.totalInvested'] = totalInvested;
-      }
-      if (totalReturns != null) {
-        updates['financialProfile.totalReturns'] = totalReturns;
-      }
-      if (tokenBalance != null) {
-        updates['financialProfile.tokenBalance'] = tokenBalance;
-      }
-      if (savingsTarget != null) {
-        updates['financialProfile.savingsTarget'] = savingsTarget;
-      }
-
-      await _firestore.collection('clients').doc(uid).set({
-        'updatedAt': FieldValue.serverTimestamp(),
-        'financialProfile': {
-          if (accountBalance != null) 'accountBalance': accountBalance,
-          if (totalInvested != null) 'totalInvested': totalInvested,
-          if (totalReturns != null) 'totalReturns': totalReturns,
-          if (tokenBalance != null) 'tokenBalance': tokenBalance,
-          if (savingsTarget != null) 'savingsTarget': savingsTarget,
-        },
-      }, SetOptions(merge: true));
-      return true;
-    } catch (e) {
-      log('Error updating financial profile: $e');
-      return false;
-    }
-  }
-
   /// Update KYC status
   Future<bool> updateKYCStatus({
     required String uid,
@@ -967,6 +920,94 @@ class FirestoreService {
       return true;
     } catch (e) {
       log('Error updating phone number: $e');
+      return false;
+    }
+  }
+
+  // ==================== FINAL updateFinancialProfile METHOD ====================
+  // Replace the existing updateFinancialProfile in lib/services/firestore_service.dart with this
+
+  Future<bool> updateFinancialProfile({
+    required String uid,
+    double? accountBalance,
+    double? totalInvested,
+    double? totalReturns,
+    int? tokenBalance,
+    double? savingsTarget,
+    DateTime? savingsTargetDate,
+    String? bankName,
+    String? accountNumber,
+    String? accountType,
+  }) async {
+    try {
+      final updates = <String, dynamic>{};
+
+      // Add all provided fields to updates
+      if (accountBalance != null) {
+        updates['financialProfile.accountBalance'] = accountBalance;
+      }
+      if (totalInvested != null) {
+        updates['financialProfile.totalInvested'] = totalInvested;
+      }
+      if (totalReturns != null) {
+        updates['financialProfile.totalReturns'] = totalReturns;
+      }
+      if (tokenBalance != null) {
+        updates['financialProfile.tokenBalance'] = tokenBalance;
+      }
+      if (savingsTarget != null) {
+        updates['financialProfile.savingsTarget'] = savingsTarget;
+      }
+      if (savingsTargetDate != null) {
+        updates['financialProfile.savingsTargetDate'] = Timestamp.fromDate(
+          savingsTargetDate,
+        );
+      }
+      if (bankName != null) {
+        updates['financialProfile.bankName'] = bankName;
+      }
+      if (accountNumber != null) {
+        updates['financialProfile.accountNumber'] = accountNumber;
+      }
+      if (accountType != null) {
+        updates['financialProfile.accountType'] = accountType;
+      }
+
+      // Always update the updatedAt timestamp
+      updates['updatedAt'] = FieldValue.serverTimestamp();
+
+      // If no fields to update, return early
+      if (updates.isEmpty ||
+          updates.length == 1 && updates.containsKey('updatedAt')) {
+        return true;
+      }
+
+      // Perform the update with merge to preserve other fields
+      await _firestore.collection('clients').doc(uid).update(updates);
+      return true;
+    } catch (e) {
+      log('Error updating financial profile: $e');
+      return false;
+    }
+  }
+
+  // ==================== ALSO ADD THIS DEDICATED METHOD ====================
+  // For specific use case of updating both savings target and target date together
+
+  Future<bool> updateSavingsTarget({
+    required String uid,
+    required double amount,
+    required DateTime targetDate,
+  }) async {
+    try {
+      await _firestore.collection('clients').doc(uid).update({
+        'financialProfile.savingsTarget': amount,
+        'financialProfile.savingsTargetDate': Timestamp.fromDate(targetDate),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      return true;
+    } catch (e) {
+      log('Error updating savings target: $e');
       return false;
     }
   }

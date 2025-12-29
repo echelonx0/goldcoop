@@ -6,10 +6,10 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../models/payment_proof_model.dart';
-import '../../../services/deposit_service.dart';
+
 import '../../../services/firestore_service.dart';
 import '../widgets/proof_detail_modal.dart';
-import '../widgets/proof_form.dart';
+import 'user_savings_deposits_service.dart';
 
 class AdminDepositsScreen extends StatefulWidget {
   final String adminUserId;
@@ -22,7 +22,7 @@ class AdminDepositsScreen extends StatefulWidget {
 
 class _AdminDepositsScreenState extends State<AdminDepositsScreen>
     with SingleTickerProviderStateMixin {
-  late final DepositService _depositService;
+  late final UserSavingsDepositsService _depositService;
   late final FirestoreService _firestoreService;
   late TabController _tabController;
 
@@ -32,7 +32,7 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen>
   @override
   void initState() {
     super.initState();
-    _depositService = DepositService();
+    _depositService = UserSavingsDepositsService();
     _firestoreService = FirestoreService();
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(_onTabChanged);
@@ -84,7 +84,6 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen>
       elevation: 0,
       backgroundColor: AppColors.backgroundWhite,
       automaticallyImplyLeading: false,
-
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh),
@@ -162,67 +161,240 @@ class _AdminDepositsScreenState extends State<AdminDepositsScreen>
     return TabBarView(
       controller: _tabController,
       children: [
-        _buildProofsList(PaymentProofStatus.pending),
-        _buildProofsList(PaymentProofStatus.approved),
-        _buildProofsList(PaymentProofStatus.rejected),
+        _buildPendingProofsList(),
+        _buildApprovedProofsList(),
+        _buildRejectedProofsList(),
       ],
     );
   }
 
-  Widget _buildProofsList(PaymentProofStatus status) {
+  /// Build pending proofs list
+  Widget _buildPendingProofsList() {
     return StreamBuilder<List<PaymentProofModel>>(
-      stream: status == PaymentProofStatus.pending
-          ? _depositService.getPendingPaymentProofsStream(limit: 100)
-          : _getProofsByStatus(status),
+      stream: _depositService.getPendingPaymentProofsStream(limit: 100),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(color: AppColors.primaryOrange),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return _buildErrorState(snapshot.error.toString());
-        }
-
-        final proofs = snapshot.data ?? [];
-
-        if (proofs.isEmpty) {
-          return _buildEmptyState(status);
-        }
-
-        return RefreshIndicator(
-          onRefresh: () async => setState(() {}),
-          color: AppColors.primaryOrange,
-          child: ListView.builder(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            itemCount: proofs.length,
-            itemBuilder: (context, index) {
-              final proof = proofs[index];
-              return DelayedDisplay(
-                delay: Duration(milliseconds: 50 + (index * 50)),
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                  child: ProofCard(
-                    proof: proof,
-                    currencyFormatter: _currencyFormatter,
-                    onTap: () => _showProofDetails(proof),
-                  ),
-                ),
-              );
-            },
-          ),
-        );
+        return _buildProofsListContent(snapshot, PaymentProofStatus.pending);
       },
     );
   }
 
-  Stream<List<PaymentProofModel>> _getProofsByStatus(
+  /// Build approved proofs list
+  Widget _buildApprovedProofsList() {
+    return StreamBuilder<List<PaymentProofModel>>(
+      stream: _depositService.getApprovedPaymentProofsStream(limit: 100),
+      builder: (context, snapshot) {
+        return _buildProofsListContent(snapshot, PaymentProofStatus.approved);
+      },
+    );
+  }
+
+  /// Build rejected proofs list
+  Widget _buildRejectedProofsList() {
+    return StreamBuilder<List<PaymentProofModel>>(
+      stream: _depositService.getRejectedPaymentProofsStream(limit: 100),
+      builder: (context, snapshot) {
+        return _buildProofsListContent(snapshot, PaymentProofStatus.rejected);
+      },
+    );
+  }
+
+  /// Generic proofs list builder
+  Widget _buildProofsListContent(
+    AsyncSnapshot<List<PaymentProofModel>> snapshot,
     PaymentProofStatus status,
   ) {
-    // For approved/rejected, we need a custom stream
-    // This is a workaround - ideally add to DepositService
-    return Stream.value([]);
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return Center(
+        child: CircularProgressIndicator(color: AppColors.primaryOrange),
+      );
+    }
+
+    if (snapshot.hasError) {
+      return _buildErrorState(snapshot.error.toString());
+    }
+
+    final proofs = snapshot.data ?? [];
+
+    if (proofs.isEmpty) {
+      return _buildEmptyState(status);
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async => setState(() {}),
+      color: AppColors.primaryOrange,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        itemCount: proofs.length,
+        itemBuilder: (context, index) {
+          final proof = proofs[index];
+          return DelayedDisplay(
+            delay: Duration(milliseconds: 50 + (index * 50)),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: _buildProofCard(proof),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// Build individual proof card
+  Widget _buildProofCard(PaymentProofModel proof) {
+    final amount = proof.metadata['amount'] as double? ?? 0.0;
+    final statusColor = _getStatusColor(proof.verificationStatus);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showProofDetails(proof),
+        borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.borderLight),
+            borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+          ),
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with status
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Deposit Proof',
+                          style: AppTextTheme.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '₦${_currencyFormatter.format(amount)}',
+                          style: AppTextTheme.heading3.copyWith(
+                            color: AppColors.deepNavy,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusColor.withAlpha(38),
+                      borderRadius: BorderRadius.circular(
+                        AppBorderRadius.small,
+                      ),
+                    ),
+                    child: Text(
+                      proof.verificationStatus.name.toUpperCase(),
+                      style: AppTextTheme.bodySmall.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Details
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDetailItem(
+                      'User ID',
+                      proof.userId.substring(0, 8) + '...',
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: _buildDetailItem(
+                      'File Type',
+                      proof.fileType.name.toUpperCase(),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+
+              // Uploaded date
+              _buildDetailItem('Uploaded', _formatDate(proof.uploadedAt)),
+
+              // Verified info (if applicable)
+              if (proof.verificationStatus != PaymentProofStatus.pending) ...[
+                const SizedBox(height: AppSpacing.sm),
+                _buildDetailItem(
+                  'Verified',
+                  _formatDate(proof.verifiedAt ?? DateTime.now()),
+                ),
+                if (proof.rejectionReason != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  _buildDetailItem('Reason', proof.rejectionReason ?? ''),
+                ],
+              ],
+
+              const SizedBox(height: AppSpacing.md),
+
+              // Tap to view details hint
+              Text(
+                'Tap to view details',
+                style: AppTextTheme.bodySmall.copyWith(
+                  color: AppColors.textTertiary,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailItem(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTextTheme.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: AppTextTheme.bodySmall.copyWith(
+            color: AppColors.deepNavy,
+            fontWeight: FontWeight.w500,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  Color _getStatusColor(PaymentProofStatus status) {
+    switch (status) {
+      case PaymentProofStatus.pending:
+        return AppColors.primaryOrange;
+      case PaymentProofStatus.approved:
+        return AppColors.tealSuccess;
+      case PaymentProofStatus.rejected:
+        return AppColors.warmRed;
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return DateFormat('MMM dd, yyyy HH:mm').format(date);
   }
 
   Widget _buildEmptyState(PaymentProofStatus status) {

@@ -40,10 +40,10 @@ class AuthHero extends StatelessWidget {
               borderRadius: AppBorderRadius.mediumRadius,
             ),
             child: Image.asset(
-              'assets/icon.png',
+              'assets/images/logo.png',
               width: 32,
               height: 32,
-              fit: BoxFit.contain,
+              fit: BoxFit.cover,
             ),
           ),
         ),

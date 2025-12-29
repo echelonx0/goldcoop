@@ -156,7 +156,7 @@ class DepositInstructionsModal extends StatelessWidget {
                           ),
                           const SizedBox(height: AppSpacing.xs),
                           Text(
-                            '1234567890',
+                            '1228581380',
                             style: AppTextTheme.heading2.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
@@ -168,8 +168,8 @@ class DepositInstructionsModal extends StatelessWidget {
                       GestureDetector(
                         onTap: () => _copyToClipboard(
                           context,
-                          '1234567890',
-                          'Account number',
+                          '1228581380',
+                          'Zenith Bank',
                         ),
                         child: Container(
                           padding: const EdgeInsets.all(AppSpacing.sm),
@@ -200,7 +200,7 @@ class DepositInstructionsModal extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    'GOLD Savings Investment Ltd',
+                    'gold savings and investment cooperative',
                     style: AppTextTheme.bodyRegular.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,

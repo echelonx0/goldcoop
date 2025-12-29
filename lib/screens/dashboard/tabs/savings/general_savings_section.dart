@@ -28,7 +28,10 @@ class GeneralSavingsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: _buildSectionHeader(),
+        ),
         const SizedBox(height: AdminDesignSystem.spacing16),
         StreamBuilder<UserModel?>(
           stream: FirestoreService().getUserStream(uid),
@@ -164,7 +167,7 @@ class GeneralSavingsSection extends StatelessWidget {
         ),
         const SizedBox(height: AdminDesignSystem.spacing4),
         Text(
-          'Save without a specific goal in mind',
+          'Your savings target and progress overview',
           style: AdminDesignSystem.bodySmall,
         ),
       ],

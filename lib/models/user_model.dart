@@ -300,6 +300,172 @@ enum AccountStatus {
 
 // ==================== FINANCIAL PROFILE ====================
 
+// class FinancialProfile {
+//   final double accountBalance;
+//   final double totalInvested;
+//   final double totalReturns;
+//   final double availableBalance;
+//   final int tokenBalance;
+//   final double monthlyIncome; // Optional, for future credit features
+//   final double savingsTarget; // Savings goal
+//   final String? bankName;
+//   final String? accountNumber;
+//   final String? accountType; // savings, checking, etc.
+//   final CreditProfile? creditProfile;
+
+//   FinancialProfile({
+//     this.accountBalance = 0.0,
+//     this.totalInvested = 0.0,
+//     this.totalReturns = 0.0,
+//     this.availableBalance = 0.0,
+//     this.tokenBalance = 0,
+//     this.monthlyIncome = 0.0,
+//     this.savingsTarget = 0.0,
+//     this.bankName,
+//     this.accountNumber,
+//     this.accountType,
+//     this.creditProfile,
+//   });
+
+//   factory FinancialProfile.fromJson(
+//     Map<String, dynamic> json,
+//     Map<String, dynamic> rawData,
+//   ) {
+//     // Safe cast without type checking
+//     Map<String, dynamic> fpData;
+//     if (json.isNotEmpty) {
+//       fpData = json;
+//     } else {
+//       final rawFp = rawData['financialProfile'];
+//       if (rawFp is Map) {
+//         fpData = Map<String, dynamic>.from(rawFp);
+//       } else {
+//         fpData = {};
+//       }
+//     }
+
+//     final accountBalance = _toDoubleWithLog(
+//       fpData['accountBalance'] ?? rawData['accountBalance'],
+//       'accountBalance',
+//     );
+//     final totalInvested = _toDoubleWithLog(
+//       fpData['totalInvested'] ?? rawData['totalInvested'],
+//       'totalInvested',
+//     );
+//     final totalReturns = _toDoubleWithLog(
+//       fpData['totalReturns'] ?? rawData['totalReturns'],
+//       'totalReturns',
+//     );
+//     final availableBalance = _toDoubleWithLog(
+//       fpData['availableBalance'] ?? rawData['accountBalance'],
+//       'availableBalance',
+//     );
+//     final tokenBalance = _toIntWithLog(
+//       fpData['tokenBalance'] ?? rawData['tokenBalance'],
+//       'tokenBalance',
+//     );
+//     final monthlyIncome = _toDoubleWithLog(
+//       fpData['monthlyIncome'],
+//       'monthlyIncome',
+//     );
+//     final savingsTarget = _toDoubleWithLog(
+//       fpData['savingsTarget'] ?? rawData['savingsTarget'],
+//       'savingsTarget',
+//     );
+//     final bankName = _toStringWithLog(fpData['bankName'], 'bankName');
+//     final accountNumber = _toStringWithLog(
+//       fpData['accountNumber'] ?? rawData['accountNumber'],
+//       'accountNumber',
+//     );
+//     final accountType = _toStringWithLog(fpData['accountType'], 'accountType');
+
+//     final creditProfile = fpData['creditProfile'] != null
+//         ? CreditProfile.fromJson(
+//             fpData['creditProfile'] as Map<String, dynamic>,
+//           )
+//         : null;
+
+//     return FinancialProfile(
+//       accountBalance: accountBalance,
+//       totalInvested: totalInvested,
+//       totalReturns: totalReturns,
+//       availableBalance: availableBalance,
+//       tokenBalance: tokenBalance,
+//       monthlyIncome: monthlyIncome,
+//       savingsTarget: savingsTarget,
+//       bankName: bankName,
+//       accountNumber: accountNumber,
+//       accountType: accountType,
+//       creditProfile: creditProfile,
+//     );
+//   }
+
+//   // Add the missing helper methods
+//   static int _toIntWithLog(dynamic value, String fieldName) {
+//     final result = _toInt(value);
+
+//     return result;
+//   }
+
+//   static int _toInt(dynamic value) {
+//     if (value == null) return 0;
+//     if (value is int) return value;
+//     if (value is double) return value.toInt();
+//     if (value is String) return int.tryParse(value) ?? 0;
+
+//     return 0;
+//   }
+
+//   static String _toStringWithLog(dynamic value, String fieldName) {
+//     final result = _toString(value);
+
+//     return result;
+//   }
+
+//   static String _toString(dynamic value) {
+//     if (value == null) return '';
+//     if (value is String) return value;
+//     if (value is int) return value.toString();
+//     if (value is double) return value.toString();
+
+//     return '';
+//   }
+
+//   static double _toDoubleWithLog(dynamic value, String fieldName) {
+//     final result = _toDouble(value);
+
+//     return result;
+//   }
+
+//   static double _toDouble(dynamic value) {
+//     if (value == null) return 0.0;
+//     if (value is double) return value;
+//     if (value is int) return value.toDouble();
+//     if (value is String) return double.tryParse(value) ?? 0.0;
+
+//     return 0.0;
+//   }
+
+//   Map<String, dynamic> toJson() {
+//     return {
+//       'accountBalance': accountBalance,
+//       'totalInvested': totalInvested,
+//       'totalReturns': totalReturns,
+//       'availableBalance': availableBalance,
+//       'tokenBalance': tokenBalance,
+//       'monthlyIncome': monthlyIncome,
+//       'savingsTarget': savingsTarget,
+//       'bankName': bankName,
+//       'accountNumber': accountNumber,
+//       'accountType': accountType,
+//       'creditProfile': creditProfile?.toJson(),
+//     };
+//   }
+// }
+
+// ==================== FINANCIAL PROFILE ====================
+// Add this to your lib/models/user_model.dart
+
 class FinancialProfile {
   final double accountBalance;
   final double totalInvested;
@@ -308,6 +474,7 @@ class FinancialProfile {
   final int tokenBalance;
   final double monthlyIncome; // Optional, for future credit features
   final double savingsTarget; // Savings goal
+  final DateTime? savingsTargetDate; // Target date for savings goal ← ADD THIS
   final String? bankName;
   final String? accountNumber;
   final String? accountType; // savings, checking, etc.
@@ -321,6 +488,7 @@ class FinancialProfile {
     this.tokenBalance = 0,
     this.monthlyIncome = 0.0,
     this.savingsTarget = 0.0,
+    this.savingsTargetDate, // ← ADD THIS
     this.bankName,
     this.accountNumber,
     this.accountType,
@@ -372,6 +540,9 @@ class FinancialProfile {
       fpData['savingsTarget'] ?? rawData['savingsTarget'],
       'savingsTarget',
     );
+    final savingsTargetDate = _parseDate(
+      fpData['savingsTargetDate'],
+    ); // ← ADD THIS
     final bankName = _toStringWithLog(fpData['bankName'], 'bankName');
     final accountNumber = _toStringWithLog(
       fpData['accountNumber'] ?? rawData['accountNumber'],
@@ -393,6 +564,7 @@ class FinancialProfile {
       tokenBalance: tokenBalance,
       monthlyIncome: monthlyIncome,
       savingsTarget: savingsTarget,
+      savingsTargetDate: savingsTargetDate, // ← ADD THIS
       bankName: bankName,
       accountNumber: accountNumber,
       accountType: accountType,
@@ -403,7 +575,6 @@ class FinancialProfile {
   // Add the missing helper methods
   static int _toIntWithLog(dynamic value, String fieldName) {
     final result = _toInt(value);
-
     return result;
   }
 
@@ -412,13 +583,11 @@ class FinancialProfile {
     if (value is int) return value;
     if (value is double) return value.toInt();
     if (value is String) return int.tryParse(value) ?? 0;
-
     return 0;
   }
 
   static String _toStringWithLog(dynamic value, String fieldName) {
     final result = _toString(value);
-
     return result;
   }
 
@@ -427,13 +596,11 @@ class FinancialProfile {
     if (value is String) return value;
     if (value is int) return value.toString();
     if (value is double) return value.toString();
-
     return '';
   }
 
   static double _toDoubleWithLog(dynamic value, String fieldName) {
     final result = _toDouble(value);
-
     return result;
   }
 
@@ -442,8 +609,21 @@ class FinancialProfile {
     if (value is double) return value;
     if (value is int) return value.toDouble();
     if (value is String) return double.tryParse(value) ?? 0.0;
-
     return 0.0;
+  }
+
+  // ← ADD THIS DATE PARSING METHOD
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    if (value is Timestamp) return value.toDate();
+    if (value is String) {
+      try {
+        return DateTime.parse(value);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
   }
 
   Map<String, dynamic> toJson() {
@@ -455,6 +635,11 @@ class FinancialProfile {
       'tokenBalance': tokenBalance,
       'monthlyIncome': monthlyIncome,
       'savingsTarget': savingsTarget,
+      'savingsTargetDate':
+          savingsTargetDate !=
+              null // ← ADD THIS
+          ? Timestamp.fromDate(savingsTargetDate!)
+          : null,
       'bankName': bankName,
       'accountNumber': accountNumber,
       'accountType': accountType,

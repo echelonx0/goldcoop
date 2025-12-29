@@ -1,5 +1,6 @@
 // lib/screens/investments/investment_checkout_screen.dart
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../components/base/app_button.dart';
 import '../../core/theme/app_colors.dart';
@@ -10,13 +11,12 @@ import '../../services/investment_plan_service.dart';
 import '../../services/firestore_service.dart';
 
 class InvestmentCheckoutScreen extends StatefulWidget {
-  final String uid;
   final InvestmentPlanModel plan;
   final double investmentAmount;
 
   const InvestmentCheckoutScreen({
     super.key,
-    required this.uid,
+
     required this.plan,
     required this.investmentAmount,
   });
@@ -35,7 +35,8 @@ class _InvestmentCheckoutScreenState extends State<InvestmentCheckoutScreen> {
   String? _error;
   bool _agreeToTerms = false;
   bool _requestCallback = false;
-
+  // Get current user ID
+  String get _userId => FirebaseAuth.instance.currentUser!.uid;
   @override
   void initState() {
     super.initState();
@@ -46,7 +47,7 @@ class _InvestmentCheckoutScreenState extends State<InvestmentCheckoutScreen> {
 
   Future<void> _loadUserData() async {
     try {
-      final user = await _firestoreService.getUser(widget.uid);
+      final user = await _firestoreService.getUser(_userId);
       setState(() {
         _user = user;
         _isLoading = false;
@@ -101,7 +102,7 @@ class _InvestmentCheckoutScreenState extends State<InvestmentCheckoutScreen> {
           Icon(Icons.error_outline, size: 48, color: AppColors.warmRed),
           const SizedBox(height: AppSpacing.md),
           Text(
-            _error!,
+            'User is not found',
             style: AppTextTheme.bodyRegular.copyWith(color: AppColors.warmRed),
             textAlign: TextAlign.center,
           ),
@@ -579,7 +580,7 @@ class _InvestmentCheckoutScreenState extends State<InvestmentCheckoutScreen> {
 
     try {
       final investmentId = await _planService.investWithBalance(
-        userId: widget.uid,
+        userId: _userId,
         planId: widget.plan.planId,
         planName: widget.plan.planName,
         amount: widget.investmentAmount,
@@ -606,7 +607,7 @@ class _InvestmentCheckoutScreenState extends State<InvestmentCheckoutScreen> {
 
     try {
       final requestId = await _planService.requestInvestment(
-        userId: widget.uid,
+        userId: _userId,
         planId: widget.plan.planId,
         planName: widget.plan.planName,
         amount: widget.investmentAmount,
@@ -621,7 +622,7 @@ class _InvestmentCheckoutScreenState extends State<InvestmentCheckoutScreen> {
           await _planService.createCallbackRequest(
             CallbackRequestModel(
               callbackId: '',
-              userId: widget.uid,
+              userId: _userId,
               userEmail: _user!.email,
               userPhone: _user!.phoneNumber,
               userName: _user!.displayName,

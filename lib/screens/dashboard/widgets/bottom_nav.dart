@@ -37,7 +37,7 @@ class DashboardBottomNav extends StatelessWidget {
         BottomNavigationBarItem(
           icon: Icon(Icons.stars_outlined, size: 24),
           activeIcon: Icon(Icons.stars, size: 24),
-          label: 'Tokens',
+          label: 'Set Goals',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person_outline, size: 24),

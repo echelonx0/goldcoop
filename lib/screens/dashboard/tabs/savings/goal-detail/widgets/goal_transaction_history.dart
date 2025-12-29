@@ -44,6 +44,7 @@ class GoalTransactionHistory extends StatelessWidget {
         }
 
         if (snapshot.hasError) {
+          print(snapshot.error);
           return _buildErrorState();
         }
 

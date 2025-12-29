@@ -3,15 +3,18 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/admin_design_system.dart';
 import '../../../../models/user_model.dart';
+import '../../../../services/firestore_service.dart';
 
 class TokensBalanceCard extends StatefulWidget {
   final UserModel user;
+
   final VoidCallback? onEarnTokens;
   final VoidCallback? onConvertTokens;
 
   const TokensBalanceCard({
     super.key,
     required this.user,
+
     this.onEarnTokens,
     this.onConvertTokens,
   });
@@ -25,10 +28,23 @@ class _TokensBalanceCardState extends State<TokensBalanceCard>
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  late final FirestoreService _firestoreService;
+
+  late int _displayTokenCount;
 
   @override
   void initState() {
     super.initState();
+    _firestoreService = FirestoreService();
+
+    // Initialize token count (ensure minimum 50)
+    _displayTokenCount = widget.user.financialProfile.tokenBalance ?? 0;
+
+    // If tokens are 0 or not set, initialize with 50 tokens
+    if (_displayTokenCount == 0) {
+      _initializeTokens();
+    }
+
     _controller = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -52,6 +68,24 @@ class _TokensBalanceCardState extends State<TokensBalanceCard>
     _controller.forward();
   }
 
+  /// Initialize user with 50 tokens on first app download
+  Future<void> _initializeTokens() async {
+    try {
+      final success = await _firestoreService.updateFinancialProfile(
+        uid: widget.user.uid,
+        tokenBalance: 50,
+      );
+
+      if (success && mounted) {
+        setState(() {
+          _displayTokenCount = 50;
+        });
+      }
+    } catch (e) {
+      print('Error initializing tokens: $e');
+    }
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -60,8 +94,7 @@ class _TokensBalanceCardState extends State<TokensBalanceCard>
 
   @override
   Widget build(BuildContext context) {
-    final tokenCount = widget.user.financialProfile.tokenBalance;
-    // final tokenValue = tokenCount * 10;
+    final tokenCount = _displayTokenCount;
 
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -71,8 +104,8 @@ class _TokensBalanceCardState extends State<TokensBalanceCard>
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                const Color(0xff2B2A2A), // Purple
-                const Color(0xff2B2A2A).withAlpha(230),
+                AdminDesignSystem.accentTeal,
+                AdminDesignSystem.accentTeal.withAlpha(230),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -80,7 +113,7 @@ class _TokensBalanceCardState extends State<TokensBalanceCard>
             borderRadius: BorderRadius.circular(AdminDesignSystem.radius16),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF9B59B6).withAlpha(38),
+                color: AdminDesignSystem.accentTeal.withAlpha(38),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -118,30 +151,9 @@ class _TokensBalanceCardState extends State<TokensBalanceCard>
                             );
                           },
                         ),
-                        // const SizedBox(height: AdminDesignSystem.spacing4),
-                        // Text(
-                        //   '≈ ₦${tokenValue.toStringAsFixed(0)} value',
-                        //   style: AdminDesignSystem.bodySmall.copyWith(
-                        //     color: Colors.white.withAlpha(153),
-                        //   ),
-                        // ),
                       ],
                     ),
                   ),
-                  // Container(
-                  //   padding: const EdgeInsets.all(AdminDesignSystem.spacing12),
-                  //   decoration: BoxDecoration(
-                  //     color: Colors.white.withAlpha(25),
-                  //     borderRadius: BorderRadius.circular(
-                  //       AdminDesignSystem.radius12,
-                  //     ),
-                  //   ),
-                  //   child: const Icon(
-                  //     Icons.stars,
-                  //     color: Colors.white,
-                  //     size: 28,
-                  //   ),
-                  // ),
                 ],
               ),
               const SizedBox(height: AdminDesignSystem.spacing24),
