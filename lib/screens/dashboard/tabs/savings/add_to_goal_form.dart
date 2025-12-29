@@ -122,7 +122,7 @@ class _AddToGoalFormState extends State<AddToGoalForm> {
           builder: (context) => UploadProofModal(
             transactionId: transactionId,
             goalId: widget.goal.goalId,
-            amount: amount,
+            // amount: amount, TODO: Have upload goal proof modal
             goalTitle: widget.goal.title,
             onSuccess: () {
               // Close upload modal

@@ -1,18 +1,22 @@
 // lib/screens/dashboard/modals/upload_proof_modal.dart
+// FIXED: Amount is now editable, transactionId is optional, no document path error
 
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:delayed_display/delayed_display.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/admin_design_system.dart';
 import '../../../components/base/app_button.dart';
 import '../../../services/deposit_service.dart';
+import '../../admin/sections/user_savings_deposits_service.dart';
 
 class UploadProofModal extends StatefulWidget {
-  final String transactionId;
+  final String transactionId; // Can be empty for general account funding
   final String? goalId;
-  final double amount;
+  final double initialAmount; // Initial amount (can be 0)
   final String? goalTitle;
   final VoidCallback onSuccess;
   final VoidCallback onCancel;
@@ -21,7 +25,7 @@ class UploadProofModal extends StatefulWidget {
     super.key,
     required this.transactionId,
     this.goalId,
-    required this.amount,
+    this.initialAmount = 0, // Default to 0 if not provided
     this.goalTitle,
     required this.onSuccess,
     required this.onCancel,
@@ -32,11 +36,18 @@ class UploadProofModal extends StatefulWidget {
 }
 
 class _UploadProofModalState extends State<UploadProofModal> {
-  late final DepositService _depositService;
+  late final UserSavingsDepositsService _depositService;
   File? _selectedFile;
   String? _fileName;
   bool _isUploading = false;
   String? _errorMessage;
+
+  // Amount input controller (EDITABLE!)
+  late final TextEditingController _amountController;
+  final _currencyFormatter = NumberFormat.currency(
+    symbol: '₦',
+    decimalDigits: 0,
+  );
 
   // Get current user ID
   String get _userId => FirebaseAuth.instance.currentUser!.uid;
@@ -44,8 +55,24 @@ class _UploadProofModalState extends State<UploadProofModal> {
   @override
   void initState() {
     super.initState();
-    _depositService = DepositService();
+    _depositService = UserSavingsDepositsService();
+
+    // Initialize amount controller with initial amount (if > 0)
+    _amountController = TextEditingController(
+      text: widget.initialAmount > 0
+          ? widget.initialAmount.toStringAsFixed(0)
+          : '',
+    );
   }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  double get _enteredAmount => double.tryParse(_amountController.text) ?? 0.0;
+  bool get _isAmountValid => _enteredAmount > 0;
 
   Future<void> _pickFile() async {
     try {
@@ -73,6 +100,12 @@ class _UploadProofModalState extends State<UploadProofModal> {
   }
 
   Future<void> _uploadProof() async {
+    // Validate amount first
+    if (!_isAmountValid) {
+      setState(() => _errorMessage = 'Please enter a valid amount');
+      return;
+    }
+
     if (_selectedFile == null) {
       setState(() => _errorMessage = 'Please select a file first');
       return;
@@ -84,16 +117,34 @@ class _UploadProofModalState extends State<UploadProofModal> {
     });
 
     try {
-      // Upload proof using DepositService (auto-detects user from Firebase Auth)
+      // Create pending transaction FIRST (if not already created)
+      String transactionId = widget.transactionId;
+
+      if (transactionId.isEmpty) {
+        // Create new transaction for general account funding
+        transactionId =
+            await _depositService.createPendingDeposit(
+              userId: _userId,
+              amount: _enteredAmount,
+              description: 'Account Funding - ${widget.goalTitle ?? 'General'}',
+            ) ??
+            '';
+
+        if (transactionId.isEmpty) {
+          throw Exception('Failed to create transaction');
+        }
+      }
+
+      // Now upload proof with the amount user entered
       final result = await _depositService.uploadPaymentProof(
         userId: _userId,
-        transactionId: widget.transactionId,
+        transactionId: transactionId,
         file: _selectedFile!,
-        goalId: widget.goalId,
-        metadata: {
-          'amount': widget.amount,
-          if (widget.goalTitle != null) 'goalTitle': widget.goalTitle,
-        },
+        amount: _enteredAmount, // ← Use user-entered amount
+        // goalId: widget.goalId,
+        // metadata: {
+        //   if (widget.goalTitle != null) 'goalTitle': widget.goalTitle,
+        // },
       );
 
       if (result.success) {
@@ -125,191 +176,234 @@ class _UploadProofModalState extends State<UploadProofModal> {
         left: AppSpacing.lg,
         right: AppSpacing.lg,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Handle
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.borderLight,
-                borderRadius: BorderRadius.circular(2),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderLight,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.lg),
 
-          // Title
-          DelayedDisplay(
-            delay: const Duration(milliseconds: 100),
-            child: Text(
-              'Upload Proof of Payment',
-              style: AppTextTheme.heading3.copyWith(
-                color: AppColors.deepNavy,
-                fontWeight: FontWeight.w600,
+            // Title
+            DelayedDisplay(
+              delay: const Duration(milliseconds: 100),
+              child: Text(
+                'Upload Proof of Payment',
+                style: AppTextTheme.heading3.copyWith(
+                  color: AppColors.deepNavy,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.sm),
 
-          DelayedDisplay(
-            delay: const Duration(milliseconds: 150),
-            child: Text(
-              'Upload your bank deposit slip or transfer receipt',
-              style: AppTextTheme.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+            DelayedDisplay(
+              delay: const Duration(milliseconds: 150),
+              child: Text(
+                'Upload your bank deposit slip or transfer receipt',
+                style: AppTextTheme.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.lg),
 
-          // Amount display
-          DelayedDisplay(
-            delay: const Duration(milliseconds: 200),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.navyLight,
-                borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-              ),
+            // Amount input (EDITABLE!)
+            DelayedDisplay(
+              delay: const Duration(milliseconds: 200),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.goalTitle ?? 'General Savings',
-                    style: AppTextTheme.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
+                  Text('Deposit Amount', style: AdminDesignSystem.labelMedium),
+                  const SizedBox(height: AdminDesignSystem.spacing8),
+                  TextField(
+                    controller: _amountController,
+                    enabled: !_isUploading, // Disable while uploading
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    '₦${widget.amount.toStringAsFixed(0)}',
-                    style: AppTextTheme.heading2.copyWith(
-                      color: AppColors.primaryOrange,
+                    style: AdminDesignSystem.bodyMedium.copyWith(
+                      color: AdminDesignSystem.textPrimary,
+                      fontSize: 20,
                       fontWeight: FontWeight.w700,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Enter amount',
+                      prefixText: '₦ ',
+                      hintStyle: AdminDesignSystem.bodyMedium.copyWith(
+                        color: AdminDesignSystem.textTertiary,
+                      ),
+                      filled: true,
+                      fillColor: AdminDesignSystem.background,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          AdminDesignSystem.radius12,
+                        ),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          AdminDesignSystem.radius12,
+                        ),
+                        borderSide: BorderSide(
+                          color: AdminDesignSystem.accentTeal,
+                          width: 2,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          AdminDesignSystem.radius12,
+                        ),
+                        borderSide: BorderSide(
+                          color: AdminDesignSystem.statusError,
+                          width: 2,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AdminDesignSystem.spacing16,
+                        vertical: AdminDesignSystem.spacing12,
+                      ),
+                    ),
+                    onChanged: (_) => setState(() => _errorMessage = null),
+                  ),
+                  const SizedBox(height: AdminDesignSystem.spacing12),
+                  Text(
+                    '${widget.goalTitle ?? 'General Savings'}',
+                    style: AdminDesignSystem.labelSmall.copyWith(
+                      color: AdminDesignSystem.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.lg),
 
-          // File picker
-          DelayedDisplay(
-            delay: const Duration(milliseconds: 250),
-            child: GestureDetector(
-              onTap: _isUploading ? null : _pickFile,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                decoration: BoxDecoration(
-                  color: _selectedFile != null
-                      ? AppColors.tealSuccess.withAlpha(25)
-                      : AppColors.backgroundNeutral,
-                  border: Border.all(
+            // File picker
+            DelayedDisplay(
+              delay: const Duration(milliseconds: 250),
+              child: GestureDetector(
+                onTap: _isUploading ? null : _pickFile,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  decoration: BoxDecoration(
                     color: _selectedFile != null
-                        ? AppColors.tealSuccess
-                        : AppColors.borderLight,
-                    width: 2,
-                    style: BorderStyle.solid,
-                  ),
-                  borderRadius: BorderRadius.circular(AppBorderRadius.medium),
-                ),
-                child: Column(
-                  children: [
-                    Icon(
-                      _selectedFile != null
-                          ? Icons.check_circle
-                          : Icons.upload_file,
-                      size: 48,
+                        ? AppColors.tealSuccess.withAlpha(25)
+                        : AppColors.backgroundNeutral,
+                    border: Border.all(
                       color: _selectedFile != null
                           ? AppColors.tealSuccess
-                          : AppColors.textSecondary,
+                          : AppColors.borderLight,
+                      width: 2,
+                      style: BorderStyle.solid,
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      _selectedFile != null ? _fileName! : 'Tap to select file',
-                      style: AppTextTheme.bodyRegular.copyWith(
+                    borderRadius: BorderRadius.circular(AppBorderRadius.medium),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        _selectedFile != null
+                            ? Icons.check_circle
+                            : Icons.upload_file,
+                        size: 48,
                         color: _selectedFile != null
                             ? AppColors.tealSuccess
                             : AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'PDF, JPG, or PNG (Max 5MB)',
-                      style: AppTextTheme.bodySmall.copyWith(
-                        color: AppColors.textTertiary,
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        _selectedFile != null
+                            ? _fileName!
+                            : 'Tap to select file',
+                        style: AppTextTheme.bodyRegular.copyWith(
+                          color: _selectedFile != null
+                              ? AppColors.tealSuccess
+                              : AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Error message
-          if (_errorMessage != null)
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.md),
-              child: Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: AppColors.warmRed.withAlpha(25),
-                  borderRadius: BorderRadius.circular(AppBorderRadius.small),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      color: AppColors.warmRed,
-                      size: 20,
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        _errorMessage!,
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        'PDF, JPG, or PNG (Max 5MB)',
                         style: AppTextTheme.bodySmall.copyWith(
-                          color: AppColors.warmRed,
+                          color: AppColors.textTertiary,
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
 
-          const SizedBox(height: AppSpacing.lg),
+            // Error message
+            if (_errorMessage != null)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.md),
+                child: Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.warmRed.withAlpha(25),
+                    borderRadius: BorderRadius.circular(AppBorderRadius.small),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: AppColors.warmRed,
+                        size: 20,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: AppTextTheme.bodySmall.copyWith(
+                            color: AppColors.warmRed,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
-          // Action buttons
-          DelayedDisplay(
-            delay: const Duration(milliseconds: 300),
-            child: Row(
-              children: [
-                Expanded(
-                  child: SecondaryButton(
-                    label: 'Cancel',
-                    onPressed: _isUploading ? null : widget.onCancel,
+            const SizedBox(height: AppSpacing.lg),
+
+            // Action buttons
+            DelayedDisplay(
+              delay: const Duration(milliseconds: 300),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: SecondaryButton(
+                      label: 'Cancel',
+                      onPressed: _isUploading ? null : widget.onCancel,
+                    ),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: PrimaryButton(
-                    label: _isUploading ? 'Uploading...' : 'Upload',
-                    onPressed: _isUploading ? null : _uploadProof,
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: PrimaryButton(
+                      label: _isUploading ? 'Uploading...' : 'Upload',
+                      onPressed: _isUploading || !_isAmountValid
+                          ? null
+                          : _uploadProof,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

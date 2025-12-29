@@ -1,11 +1,8 @@
-// lib/components/account/settings_list_tile.dart
-// Reusable settings list tile widget
-
 import 'package:flutter/material.dart';
-
-import '../../../../../core/theme/app_colors.dart';
+import '../../../../../core/theme/admin_design_system.dart';
 
 /// A reusable settings list tile with icon, title, subtitle, and tap action.
+/// Follows AdminDesignSystem for colors, spacing, and typography.
 /// Used in account settings and other list-based screens.
 class SettingsListTile extends StatelessWidget {
   final IconData icon;
@@ -29,24 +26,26 @@ class SettingsListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = iconColor ?? AppColors.primaryOrange;
+    final color = iconColor ?? AdminDesignSystem.accentTeal;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppBorderRadius.small),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.md,
-        ),
-        child: Row(
-          children: [
-            _buildIconContainer(color),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(child: _buildContent()),
-            if (trailing != null) trailing!,
-            if (showChevron && trailing == null) _buildChevron(),
-          ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: AdminDesignSystem.spacing16,
+            vertical: AdminDesignSystem.spacing16,
+          ),
+          child: Row(
+            children: [
+              _buildIconContainer(color),
+              SizedBox(width: AdminDesignSystem.spacing12),
+              Expanded(child: _buildContent()),
+              if (trailing != null) trailing!,
+              if (showChevron && trailing == null) _buildChevron(),
+            ],
+          ),
         ),
       ),
     );
@@ -55,10 +54,10 @@ class SettingsListTile extends StatelessWidget {
   Widget _buildIconContainer(Color color) {
     return Container(
       decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(8),
+        color: color.withAlpha(38),
+        borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
       ),
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.all(AdminDesignSystem.spacing8),
       child: Icon(icon, color: color, size: 20),
     );
   }
@@ -69,18 +68,16 @@ class SettingsListTile extends StatelessWidget {
       children: [
         Text(
           title,
-          style: AppTextTheme.bodyRegular.copyWith(
-            color: AppColors.deepNavy,
+          style: AdminDesignSystem.bodyMedium.copyWith(
+            color: AdminDesignSystem.textPrimary,
             fontWeight: FontWeight.w500,
-            fontSize: 14,
           ),
         ),
-        const SizedBox(height: 2),
+        SizedBox(height: AdminDesignSystem.spacing4),
         Text(
           subtitle,
-          style: AppTextTheme.bodySmall.copyWith(
-            color: AppColors.textSecondary,
-            fontSize: 12,
+          style: AdminDesignSystem.bodySmall.copyWith(
+            color: AdminDesignSystem.textSecondary,
           ),
         ),
       ],
@@ -88,20 +85,25 @@ class SettingsListTile extends StatelessWidget {
   }
 
   Widget _buildChevron() {
-    return const Icon(
+    return Icon(
       Icons.chevron_right,
-      color: AppColors.textSecondary,
+      color: AdminDesignSystem.textTertiary,
       size: 20,
     );
   }
 }
 
 /// A divider styled for settings lists
+/// Uses background color from AdminDesignSystem for consistency
 class SettingsListDivider extends StatelessWidget {
   const SettingsListDivider({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Divider(color: AppColors.backgroundNeutral, height: 1, thickness: 1);
+    return Divider(
+      color: AdminDesignSystem.background,
+      height: 1,
+      thickness: 1,
+    );
   }
 }

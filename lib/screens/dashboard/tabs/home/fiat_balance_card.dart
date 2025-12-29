@@ -350,7 +350,7 @@ class _FiatBalanceCardState extends State<FiatBalanceCard>
             builder: (context) => UploadProofModal(
               transactionId: '', // Empty for new deposit (not tied to goal)
               goalId: '', // Empty for general account funding
-              amount: 0, // Will be determined by user in upload form
+
               goalTitle: 'Account Funding',
               onSuccess: () {
                 Navigator.pop(context);

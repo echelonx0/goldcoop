@@ -9,7 +9,7 @@ import '../models/user_model.dart';
 import '../models/transaction_model.dart';
 import '../models/investment_model.dart';
 import '../models/callback_and_request_models.dart';
-import '../screens/dashboard/modals/learning_center_modal.dart';
+import '../screens/dashboard/modals/learning_interest_modal.dart';
 
 class FirestoreService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;

@@ -161,8 +161,8 @@ class _TokensBalanceCardState extends State<TokensBalanceCard>
                 children: [
                   _AnimatedActionButton(
                     icon: Icons.add_circle_outline,
-                    label: 'Earn Tokens',
-                    onPressed: widget.onEarnTokens,
+                    label: 'Transfer Tokens',
+                    onPressed: () {},
                     delay: 200,
                   ),
                   if (tokenCount > 0) ...[

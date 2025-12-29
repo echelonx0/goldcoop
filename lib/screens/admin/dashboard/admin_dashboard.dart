@@ -759,7 +759,6 @@ import '../sections/users_management.dart';
 import 'widgets/admin_app_bar.dart';
 import 'widgets/admin_bottom_nav.dart';
 import 'tabs/overview_tab.dart';
-import 'tabs/support_tab.dart';
 
 class AdminDashboard extends StatefulWidget {
   final String adminId;
@@ -808,15 +807,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
         return const InvestmentPlansManagement();
       case 2:
         return const UsersManagement();
-      case 3: // ✅ NEW - Deposits Management
+      case 3:
         return AdminDepositsScreen(adminUserId: widget.adminId);
-      // case 4: // ✅ CHANGED from case 3
-      //   return SupportTab(
-      //     adminId: widget.adminId,
-      //     adminName: widget.adminName,
-      //     adminAvatar: widget.adminAvatar,
-      //     adminSupportService: _adminSupportService,
-      //   );
+
       default:
         return OverviewTab(adminService: _adminService);
     }

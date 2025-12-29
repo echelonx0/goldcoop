@@ -1,7 +1,9 @@
 // lib/screens/dashboard/modals/learning_center_modal.dart
 
 import 'package:flutter/material.dart';
+import 'package:delayed_display/delayed_display.dart';
 import '../../../core/theme/admin_design_system.dart';
+import 'learning_interest_modal.dart';
 
 class LearningCenterModal extends StatefulWidget {
   final String userId;
@@ -24,11 +26,8 @@ class _LearningCenterModalState extends State<LearningCenterModal>
   late Animation<double> _slideAnimation;
 
   final Set<String> _selectedTopics = {};
-  final TextEditingController _customTopicController = TextEditingController();
-  final FocusNode _customTopicFocus = FocusNode();
-
+  String? _customTopic; // ← Add this to capture custom topic
   bool _isSubmitting = false;
-  bool _showCustomInput = false;
   bool _submitted = false;
 
   static const List<_TopicOption> _predefinedTopics = [
@@ -106,8 +105,6 @@ class _LearningCenterModalState extends State<LearningCenterModal>
   @override
   void dispose() {
     _controller.dispose();
-    _customTopicController.dispose();
-    _customTopicFocus.dispose();
     super.dispose();
   }
 
@@ -162,17 +159,43 @@ class _LearningCenterModalState extends State<LearningCenterModal>
             padding: const EdgeInsets.all(AdminDesignSystem.spacing20),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                _buildHeader(),
+                // Header
+                DelayedDisplay(
+                  delay: const Duration(milliseconds: 100),
+                  child: _buildHeader(),
+                ),
                 const SizedBox(height: AdminDesignSystem.spacing24),
-                _buildComingSoonBanner(),
+
+                // Coming Soon Banner
+                DelayedDisplay(
+                  delay: const Duration(milliseconds: 180),
+                  child: _buildComingSoonBanner(),
+                ),
                 const SizedBox(height: AdminDesignSystem.spacing24),
-                _buildTopicsSection(),
+
+                // Topics Section Header
+                DelayedDisplay(
+                  delay: const Duration(milliseconds: 260),
+                  child: _buildTopicsSection(),
+                ),
                 const SizedBox(height: AdminDesignSystem.spacing16),
+
+                // Topics Grid with staggered items
                 _buildTopicsGrid(),
-                const SizedBox(height: AdminDesignSystem.spacing16),
-                _buildCustomTopicSection(),
                 const SizedBox(height: AdminDesignSystem.spacing24),
-                _buildSubmitButton(),
+
+                // Custom Topic CTA
+                DelayedDisplay(
+                  delay: const Duration(milliseconds: 820),
+                  child: _buildCustomTopicCTA(),
+                ),
+                const SizedBox(height: AdminDesignSystem.spacing24),
+
+                // Submit Button
+                DelayedDisplay(
+                  delay: const Duration(milliseconds: 900),
+                  child: _buildSubmitButton(),
+                ),
                 const SizedBox(height: AdminDesignSystem.spacing32),
               ]),
             ),
@@ -347,149 +370,96 @@ class _LearningCenterModalState extends State<LearningCenterModal>
         final topic = _predefinedTopics[index];
         final isSelected = _selectedTopics.contains(topic.id);
 
-        return TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0, end: 1),
-          duration: Duration(milliseconds: 300 + (index * 50)),
-          curve: Curves.easeOutCubic,
-          builder: (context, value, child) {
-            return Transform.translate(
-              offset: Offset(0, (1 - value) * 20),
-              child: Opacity(opacity: value, child: child),
-            );
-          },
-          child: _TopicCard(
-            topic: topic,
-            isSelected: isSelected,
-            onTap: () => _toggleTopic(topic.id),
+        return DelayedDisplay(
+          delay: Duration(milliseconds: 340 + (index * 60)),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) {
+              return Transform.translate(
+                offset: Offset(0, (1 - value) * 20),
+                child: Opacity(opacity: value, child: child),
+              );
+            },
+            child: _TopicCard(
+              topic: topic,
+              isSelected: isSelected,
+              onTap: () => _toggleTopic(topic.id),
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildCustomTopicSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Toggle button
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              setState(() {
-                _showCustomInput = !_showCustomInput;
-                if (_showCustomInput) {
-                  Future.delayed(const Duration(milliseconds: 100), () {
-                    _customTopicFocus.requestFocus();
-                  });
-                }
-              });
-            },
+  Widget _buildCustomTopicCTA() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _showCustomTopicModal,
+        borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
+        child: Container(
+          padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
+          decoration: BoxDecoration(
+            color: AdminDesignSystem.accentTeal.withAlpha(13),
             borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
-            child: Container(
-              padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
-              decoration: BoxDecoration(
-                color: AdminDesignSystem.background,
-                borderRadius: BorderRadius.circular(AdminDesignSystem.radius12),
-                border: Border.all(
-                  color: _showCustomInput
-                      ? AdminDesignSystem.accentTeal
-                      : AdminDesignSystem.divider,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _showCustomInput ? Icons.edit : Icons.add_circle_outline,
-                    color: _showCustomInput
-                        ? AdminDesignSystem.accentTeal
-                        : AdminDesignSystem.textSecondary,
-                    size: 20,
-                  ),
-                  const SizedBox(width: AdminDesignSystem.spacing12),
-                  Expanded(
-                    child: Text(
-                      _showCustomInput
-                          ? 'Tell us what else you\'d like to learn'
-                          : 'Something else? Let us know!',
-                      style: AdminDesignSystem.bodyMedium.copyWith(
-                        color: _showCustomInput
-                            ? AdminDesignSystem.accentTeal
-                            : AdminDesignSystem.textSecondary,
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    _showCustomInput
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    color: AdminDesignSystem.textTertiary,
-                  ),
-                ],
-              ),
+            border: Border.all(
+              color: AdminDesignSystem.accentTeal.withAlpha(51),
             ),
           ),
-        ),
-
-        // Custom input field
-        AnimatedSize(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-          child: _showCustomInput
-              ? Padding(
-                  padding: const EdgeInsets.only(
-                    top: AdminDesignSystem.spacing12,
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AdminDesignSystem.spacing8),
+                decoration: BoxDecoration(
+                  color: AdminDesignSystem.accentTeal.withAlpha(38),
+                  borderRadius: BorderRadius.circular(
+                    AdminDesignSystem.radius8,
                   ),
-                  child: TextFormField(
-                    controller: _customTopicController,
-                    focusNode: _customTopicFocus,
-                    maxLines: 3,
-                    maxLength: 200,
-                    decoration: InputDecoration(
-                      hintText:
-                          'E.g., "How to start a side business" or "Understanding cryptocurrency"',
-                      hintStyle: AdminDesignSystem.bodyMedium.copyWith(
-                        color: AdminDesignSystem.textTertiary,
-                      ),
-                      filled: true,
-                      fillColor: AdminDesignSystem.background,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          AdminDesignSystem.radius12,
-                        ),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(
-                          AdminDesignSystem.radius12,
-                        ),
-                        borderSide: BorderSide(
-                          color: AdminDesignSystem.accentTeal,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: const EdgeInsets.all(
-                        AdminDesignSystem.spacing16,
-                      ),
-                      counterStyle: AdminDesignSystem.labelSmall.copyWith(
-                        color: AdminDesignSystem.textTertiary,
+                ),
+                child: Icon(
+                  Icons.lightbulb_outline,
+                  color: AdminDesignSystem.accentTeal,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AdminDesignSystem.spacing12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Something else?',
+                      style: AdminDesignSystem.bodyMedium.copyWith(
+                        color: AdminDesignSystem.primaryNavy,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    style: AdminDesignSystem.bodyMedium.copyWith(
-                      color: AdminDesignSystem.textPrimary,
+                    const SizedBox(height: AdminDesignSystem.spacing4),
+                    Text(
+                      'Tell us what you\'d like to learn',
+                      style: AdminDesignSystem.bodySmall.copyWith(
+                        color: AdminDesignSystem.textSecondary,
+                      ),
                     ),
-                  ),
-                )
-              : const SizedBox.shrink(),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                color: AdminDesignSystem.accentTeal,
+                size: 16,
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildSubmitButton() {
-    final hasSelection =
-        _selectedTopics.isNotEmpty ||
-        _customTopicController.text.trim().isNotEmpty;
+    final hasSelection = _selectedTopics.isNotEmpty;
 
     return Column(
       children: [
@@ -548,9 +518,13 @@ class _LearningCenterModalState extends State<LearningCenterModal>
         duration: const Duration(milliseconds: 600),
         curve: Curves.easeOutBack,
         builder: (context, value, child) {
+          // Clamp opacity to 0.0-1.0 range
+          final opacity = value.clamp(0.0, 1.0);
+          final scale = 0.8 + (value * 0.2);
+
           return Transform.scale(
-            scale: 0.8 + (value * 0.2),
-            child: Opacity(opacity: value, child: child),
+            scale: scale,
+            child: Opacity(opacity: opacity, child: child),
           );
         },
         child: Padding(
@@ -627,15 +601,35 @@ class _LearningCenterModalState extends State<LearningCenterModal>
     });
   }
 
+  void _showCustomTopicModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AdminDesignSystem.radius24),
+        ),
+      ),
+      builder: (context) => _CustomTopicModal(
+        onSubmit: (customTopic) {
+          setState(() {
+            _customTopic = customTopic; // ← Capture the actual topic text
+            _selectedTopics.add('custom'); // ← Mark custom as selected
+          });
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+
   Future<void> _submitInterests() async {
     setState(() => _isSubmitting = true);
 
     final interest = LearningInterestModel(
       userId: widget.userId,
       selectedTopics: _selectedTopics.toList(),
-      customTopic: _customTopicController.text.trim().isNotEmpty
-          ? _customTopicController.text.trim()
-          : null,
+      customTopic: _customTopic, // ← Include custom topic
       createdAt: DateTime.now(),
     );
 
@@ -658,6 +652,394 @@ class _LearningCenterModalState extends State<LearningCenterModal>
           ),
         );
       }
+    }
+  }
+}
+
+// ==================== CUSTOM TOPIC MODAL ====================
+
+class _CustomTopicModal extends StatefulWidget {
+  final Function(String customTopic) onSubmit;
+
+  const _CustomTopicModal({required this.onSubmit});
+
+  @override
+  State<_CustomTopicModal> createState() => _CustomTopicModalState();
+}
+
+class _CustomTopicModalState extends State<_CustomTopicModal>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _slideAnimation;
+
+  final TextEditingController _topicController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+  bool _isSubmitting = false;
+  String _customTopic = ''; // ← Store the actual topic text
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    _slideAnimation = Tween<double>(
+      begin: 40.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+
+    _controller.forward();
+
+    // Auto-focus input after small delay for smooth keyboard appearance
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
+
+    // Add listener for real-time validation updates
+    _topicController.addListener(() {
+      setState(() {}); // Rebuild to update button state
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _topicController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: Transform.translate(
+            offset: Offset(0, _slideAnimation.value),
+            child: child,
+          ),
+        );
+      },
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottom),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AdminDesignSystem.spacing20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(
+                    bottom: AdminDesignSystem.spacing20,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AdminDesignSystem.textTertiary.withAlpha(77),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
+              // Header
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(AdminDesignSystem.spacing12),
+                    decoration: BoxDecoration(
+                      color: AdminDesignSystem.accentTeal.withAlpha(38),
+                      borderRadius: BorderRadius.circular(
+                        AdminDesignSystem.radius12,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.lightbulb_outline,
+                      color: AdminDesignSystem.accentTeal,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: AdminDesignSystem.spacing12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'What else?',
+                          style: AdminDesignSystem.headingMedium.copyWith(
+                            color: AdminDesignSystem.primaryNavy,
+                          ),
+                        ),
+                        const SizedBox(height: AdminDesignSystem.spacing4),
+                        Text(
+                          'Help us understand your learning goals',
+                          style: AdminDesignSystem.bodySmall.copyWith(
+                            color: AdminDesignSystem.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AdminDesignSystem.spacing24),
+
+              // Input Label
+              Text(
+                'Your learning interest',
+                style: AdminDesignSystem.labelMedium.copyWith(
+                  color: AdminDesignSystem.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AdminDesignSystem.spacing8),
+
+              // Text Input
+              TextFormField(
+                controller: _topicController,
+                focusNode: _focusNode,
+                maxLines: 3,
+                minLines: 2,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _isTopicValid
+                    ? _handleSubmit()
+                    : FocusScope.of(context).unfocus(),
+                decoration: InputDecoration(
+                  hintText:
+                      'E.g., "How to start a side business" or "Understanding cryptocurrency"',
+                  hintStyle: AdminDesignSystem.bodyMedium.copyWith(
+                    color: AdminDesignSystem.textTertiary,
+                  ),
+                  filled: true,
+                  fillColor: AdminDesignSystem.background,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AdminDesignSystem.radius12,
+                    ),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      AdminDesignSystem.radius12,
+                    ),
+                    borderSide: BorderSide(
+                      color: _isTopicValid
+                          ? AdminDesignSystem.statusActive
+                          : AdminDesignSystem.accentTeal,
+                      width: 2,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.all(
+                    AdminDesignSystem.spacing16,
+                  ),
+                  // Character counter below field
+                  helperText: _hasInput ? '$_charCount characters' : null,
+                  helperStyle: AdminDesignSystem.labelSmall.copyWith(
+                    color: AdminDesignSystem.textTertiary,
+                  ),
+                ),
+                style: AdminDesignSystem.bodyMedium.copyWith(
+                  color: AdminDesignSystem.textPrimary,
+                ),
+              ),
+
+              // Validation feedback
+              if (_hasInput && !_isTopicValid)
+                Padding(
+                  padding: const EdgeInsets.only(
+                    top: AdminDesignSystem.spacing8,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 14,
+                        color: AdminDesignSystem.statusError,
+                      ),
+                      const SizedBox(width: AdminDesignSystem.spacing8),
+                      Text(
+                        _validationMessage,
+                        style: AdminDesignSystem.labelSmall.copyWith(
+                          color: AdminDesignSystem.statusError,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else if (_isTopicValid)
+                Padding(
+                  padding: const EdgeInsets.only(
+                    top: AdminDesignSystem.spacing8,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        size: 14,
+                        color: AdminDesignSystem.statusActive,
+                      ),
+                      const SizedBox(width: AdminDesignSystem.spacing8),
+                      Text(
+                        'Ready to submit',
+                        style: AdminDesignSystem.labelSmall.copyWith(
+                          color: AdminDesignSystem.statusActive,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: AdminDesignSystem.spacing24),
+
+              // Info text
+              Container(
+                padding: const EdgeInsets.all(AdminDesignSystem.spacing12),
+                decoration: BoxDecoration(
+                  color: AdminDesignSystem.accentTeal.withAlpha(13),
+                  borderRadius: BorderRadius.circular(
+                    AdminDesignSystem.radius8,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: AdminDesignSystem.accentTeal,
+                    ),
+                    const SizedBox(width: AdminDesignSystem.spacing8),
+                    Expanded(
+                      child: Text(
+                        'We\'ll use this to create personalized learning content for you',
+                        style: AdminDesignSystem.labelSmall.copyWith(
+                          color: AdminDesignSystem.accentTeal,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AdminDesignSystem.spacing24),
+
+              // Action buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AdminDesignSystem.spacing16,
+                        ),
+                        side: BorderSide(color: AdminDesignSystem.divider),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            AdminDesignSystem.radius12,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        'Cancel',
+                        style: AdminDesignSystem.bodyMedium.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AdminDesignSystem.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AdminDesignSystem.spacing12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _isTopicValid && !_isSubmitting
+                          ? _handleSubmit
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _isTopicValid
+                            ? AdminDesignSystem.accentTeal
+                            : AdminDesignSystem.textTertiary.withAlpha(77),
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: AdminDesignSystem.textTertiary
+                            .withAlpha(77),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AdminDesignSystem.spacing16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            AdminDesignSystem.radius12,
+                          ),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: _isSubmitting
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : Text(
+                              _isTopicValid ? 'Add' : 'Type to continue',
+                              style: AdminDesignSystem.bodyMedium.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  bool get _isTopicValid {
+    final text = _topicController.text.trim();
+    // Require at least 3 characters (was 5, too strict)
+    return text.isNotEmpty && text.length >= 3;
+  }
+
+  bool get _hasInput => _topicController.text.trim().isNotEmpty;
+
+  int get _charCount => _topicController.text.length;
+
+  String get _validationMessage {
+    final text = _topicController.text.trim();
+    if (text.isEmpty) return 'Tell us what you want to learn';
+    if (text.length < 3) return 'At least 3 characters';
+    return ''; // Valid
+  }
+
+  Future<void> _handleSubmit() async {
+    if (!_isTopicValid) return;
+
+    setState(() => _isSubmitting = true);
+
+    // Simulate network delay
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    if (mounted) {
+      _customTopic = _topicController.text.trim(); // ← Capture the text
+      widget.onSubmit(_customTopic); // ← Pass to parent
     }
   }
 }
@@ -762,7 +1144,7 @@ class _TopicCard extends StatelessWidget {
   }
 }
 
-// ==================== DATA CLASSES ====================
+// ==================== INTERNAL DATA CLASSES ====================
 
 class _TopicOption {
   final String id;
@@ -776,40 +1158,4 @@ class _TopicOption {
     required this.icon,
     required this.description,
   });
-}
-
-class LearningInterestModel {
-  final String? interestId;
-  final String userId;
-  final List<String> selectedTopics;
-  final String? customTopic;
-  final DateTime createdAt;
-
-  LearningInterestModel({
-    this.interestId,
-    required this.userId,
-    required this.selectedTopics,
-    this.customTopic,
-    required this.createdAt,
-  });
-
-  Map<String, dynamic> toJson() {
-    return {
-      'interestId': interestId,
-      'userId': userId,
-      'selectedTopics': selectedTopics,
-      'customTopic': customTopic,
-      'createdAt': createdAt.toIso8601String(),
-    };
-  }
-
-  factory LearningInterestModel.fromJson(Map<String, dynamic> json) {
-    return LearningInterestModel(
-      interestId: json['interestId'],
-      userId: json['userId'] ?? '',
-      selectedTopics: List<String>.from(json['selectedTopics'] ?? []),
-      customTopic: json['customTopic'],
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
-    );
-  }
 }

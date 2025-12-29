@@ -1118,7 +1118,7 @@ class GeneralSavingsClockModal extends StatelessWidget {
             builder: (context) => UploadProofModal(
               transactionId: '',
               goalId: '',
-              amount: 0,
+
               goalTitle: 'General Account Funding',
               onSuccess: () {
                 Navigator.pop(context); // Close upload modal
