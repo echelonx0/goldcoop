@@ -1,5 +1,4 @@
 // lib/screens/admin/support/admin_support_inbox.dart
-// FIXED VERSION - Proper conversation filtering by status
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -7,7 +6,7 @@ import 'package:delayed_display/delayed_display.dart';
 import '../../../core/theme/admin_design_system.dart';
 import '../../../models/support_models.dart';
 import '../../../services/admin_support_service.dart';
-import '../admin/admin_chat_screen.dart';
+import '../admin/dashboard/tabs/admin_chat_screen.dart';
 
 class AdminSupportInbox extends StatefulWidget {
   final String adminId;
@@ -78,11 +77,10 @@ class _AdminSupportInboxState extends State<AdminSupportInbox> {
         Padding(
           padding: const EdgeInsets.only(right: AdminDesignSystem.spacing12),
           child: Center(
-            child: FutureBuilder<Map<String, dynamic>>(
-              future: _adminSupportService.getSupportStats(),
+            child: StreamBuilder<int>(
+              stream: _getOpenConversationCount(),
               builder: (context, snapshot) {
-                final stats = snapshot.data ?? {};
-                final openCount = stats['openTickets'] ?? 0;
+                final openCount = snapshot.data ?? 0;
 
                 return GestureDetector(
                   onTap: () {
@@ -129,6 +127,13 @@ class _AdminSupportInboxState extends State<AdminSupportInbox> {
           ),
         ),
       ],
+    );
+  }
+
+  /// Stream open conversation count (matches the list)
+  Stream<int> _getOpenConversationCount() {
+    return _adminSupportService.getActiveConversationsStream().map(
+      (conversations) => conversations.length,
     );
   }
 
@@ -220,10 +225,9 @@ class _AdminSupportInboxState extends State<AdminSupportInbox> {
 
         var conversations = snapshot.data ?? [];
 
-        // FIXED: Properly filter conversations by status
+        // Filter conversations by status
         if (_filterStatus != 'all') {
           conversations = conversations.where((c) {
-            // Map filter status to conversation status
             switch (_filterStatus) {
               case 'open':
                 return c.status == ConversationStatus.open;
@@ -235,7 +239,6 @@ class _AdminSupportInboxState extends State<AdminSupportInbox> {
                 return c.status == ConversationStatus.open &&
                     c.lastMessageAt != null;
               case 'waiting':
-                // Waiting = conversations with unread admin messages
                 return c.unreadCount > 0;
               default:
                 return true;
@@ -247,7 +250,6 @@ class _AdminSupportInboxState extends State<AdminSupportInbox> {
           return _buildEmptyState();
         }
 
-        // Sort: newest first
         conversations.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
         return ListView.separated(
@@ -348,7 +350,6 @@ class _ConversationListItem extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header: Title + Status
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -414,8 +415,6 @@ class _ConversationListItem extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AdminDesignSystem.spacing12),
-
-            // Meta info: User + Time
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -437,8 +436,6 @@ class _ConversationListItem extends StatelessWidget {
                 ),
               ],
             ),
-
-            // Assignment info (if assigned)
             if (conversation.assignedToAdminName != null) ...[
               const SizedBox(height: AdminDesignSystem.spacing8),
               Container(
@@ -466,7 +463,6 @@ class _ConversationListItem extends StatelessWidget {
     );
   }
 
-  // Helper to safely display ID
   String _getIdDisplay(String id) {
     if (id.isEmpty) return 'No ID';
     if (id.length >= 8) return id.substring(0, 8);

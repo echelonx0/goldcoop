@@ -180,7 +180,7 @@ class _InvestmentsScreenState extends State<InvestmentsScreen>
         }
 
         if (snapshot.hasError) {
-          return SliverFillRemaining(child: _buildErrorState());
+          return SliverFillRemaining(child: InvestentsErrorState());
         }
 
         var allPlans = snapshot.data ?? [];
@@ -207,7 +207,7 @@ class _InvestmentsScreenState extends State<InvestmentsScreen>
         }).toList();
 
         if (allPlans.isEmpty) {
-          return SliverFillRemaining(child: _buildEmptyState());
+          return SliverFillRemaining(child: InvestmentsEmptyState());
         }
 
         // Separate featured plans
@@ -370,40 +370,6 @@ class _InvestmentsScreenState extends State<InvestmentsScreen>
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildErrorState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 48, color: AppColors.warmRed),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'Failed to load plans',
-            style: AppTextTheme.bodyRegular.copyWith(color: AppColors.warmRed),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.search_off, size: 48, color: AppColors.textSecondary),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'No plans found',
-            style: AppTextTheme.bodyRegular.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -695,5 +661,49 @@ class _InvestmentsScreenState extends State<InvestmentsScreen>
       return '₦${(amount / 1000).toStringAsFixed(0)}K';
     }
     return '₦${amount.toStringAsFixed(0)}';
+  }
+}
+
+class InvestmentsEmptyState extends StatelessWidget {
+  const InvestmentsEmptyState({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off, size: 48, color: AppColors.textSecondary),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'No plans found',
+            style: AppTextTheme.bodyRegular.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class InvestentsErrorState extends StatelessWidget {
+  const InvestentsErrorState({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 48, color: AppColors.warmRed),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Failed to load plans',
+            style: AppTextTheme.bodyRegular.copyWith(color: AppColors.warmRed),
+          ),
+        ],
+      ),
+    );
   }
 }

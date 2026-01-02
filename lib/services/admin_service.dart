@@ -10,7 +10,68 @@ class AdminService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // ==================== STATS ====================
+  // lib/services/admin_service.dart - SIMPLIFIED getAdminStats()
 
+  Future<Map<String, dynamic>> getAdminStats() async {
+    try {
+      final usersSnapshot = await _firestore.collection('clients').get();
+      final investmentsSnapshot = await _firestore
+          .collection('investment_opportunities')
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      // Get completed transactions for deposits/withdrawals breakdown
+      final depositsSnapshot = await _firestore
+          .collection('transactions')
+          .where('transactionType', isEqualTo: 'deposit')
+          .where('transactionStatus', isEqualTo: 'completed')
+          .get();
+
+      final withdrawalsSnapshot = await _firestore
+          .collection('transactions')
+          .where('transactionType', isEqualTo: 'withdrawal')
+          .where('transactionStatus', isEqualTo: 'completed')
+          .get();
+
+      double totalCashBalance = 0;
+      int activeUsers = 0;
+
+      // Calculate user-level totals (accountBalance = deposits - withdrawals)
+      for (var doc in usersSnapshot.docs) {
+        final data = doc.data();
+        final fpData = data['financialProfile'] as Map<String, dynamic>?;
+        if (fpData != null) {
+          final balance = (fpData['accountBalance'] ?? 0).toDouble();
+          totalCashBalance += balance;
+          if (balance > 0) activeUsers++;
+        }
+      }
+
+      // Calculate transaction totals
+      double totalDeposits = 0;
+      for (var doc in depositsSnapshot.docs) {
+        totalDeposits += (doc.data()['amount'] ?? 0).toDouble();
+      }
+
+      double totalWithdrawals = 0;
+      for (var doc in withdrawalsSnapshot.docs) {
+        totalWithdrawals += (doc.data()['amount'] ?? 0).toDouble();
+      }
+
+      return {
+        'totalUsers': usersSnapshot.size,
+        'activeUsers': activeUsers,
+        'totalInvestments': investmentsSnapshot.size,
+        'cashBalance': totalCashBalance, // Main metric
+        'totalDeposits': totalDeposits, // Breakdown #1
+        'totalWithdrawals': totalWithdrawals, // Breakdown #2
+        'totalTransactions': depositsSnapshot.size + withdrawalsSnapshot.size,
+      };
+    } catch (e) {
+      log('[AdminService] Error fetching stats: $e');
+      return {};
+    }
+  }
   // Future<Map<String, dynamic>> getAdminStats() async {
   //   try {
   //     final usersSnapshot = await _firestore.collection('clients').get();
@@ -20,34 +81,46 @@ class AdminService {
   //         .get();
   //     final transactionsSnapshot = await _firestore
   //         .collection('transactions')
-  //         .where('status', isEqualTo: 'completed')
+  //         .where(
+  //           'transactionStatus',
+  //           isEqualTo: 'completed',
+  //         ) // ← FIX: Use transactionStatus
   //         .get();
 
   //     double totalInvested = 0;
   //     double totalBalance = 0;
+  //     double totalReturns = 0;
   //     int activeInvestors = 0;
 
+  //     // Calculate user-level totals
   //     for (var doc in usersSnapshot.docs) {
   //       final data = doc.data();
   //       final fpData = data['financialProfile'] as Map<String, dynamic>?;
   //       if (fpData != null) {
   //         totalInvested += (fpData['totalInvested'] ?? 0).toDouble();
   //         totalBalance += (fpData['accountBalance'] ?? 0).toDouble();
+  //         totalReturns += (fpData['totalReturns'] ?? 0).toDouble();
   //         if ((fpData['totalInvested'] ?? 0) > 0) activeInvestors++;
   //       }
   //     }
 
+  //     // Calculate transaction volume
   //     double totalTransactionVolume = 0;
   //     for (var doc in transactionsSnapshot.docs) {
   //       totalTransactionVolume += (doc.data()['amount'] ?? 0).toDouble();
   //     }
+
+  //     // ✅ PLATFORM BALANCE = accountBalance + invested + returns
+  //     final platformBalance = totalBalance + totalInvested + totalReturns;
 
   //     return {
   //       'totalUsers': usersSnapshot.size,
   //       'activeInvestors': activeInvestors,
   //       'totalInvestments': investmentsSnapshot.size,
   //       'totalInvested': totalInvested,
-  //       'totalBalance': totalBalance,
+  //       'accountBalance': totalBalance, // ← Breakdown #1
+  //       'totalReturns': totalReturns, // ← Breakdown #2
+  //       'platformBalance': platformBalance, // ← Total
   //       'totalTransactions': transactionsSnapshot.size,
   //       'transactionVolume': totalTransactionVolume,
   //     };
@@ -56,68 +129,7 @@ class AdminService {
   //     return {};
   //   }
   // }
-  // lib/services/admin_service.dart (ADD THIS METHOD)
-
-  // Add to existing AdminService class:
-
-  Future<Map<String, dynamic>> getAdminStats() async {
-    try {
-      final usersSnapshot = await _firestore.collection('clients').get();
-      final investmentsSnapshot = await _firestore
-          .collection('investment_opportunities')
-          .where('isActive', isEqualTo: true)
-          .get();
-      final transactionsSnapshot = await _firestore
-          .collection('transactions')
-          .where(
-            'transactionStatus',
-            isEqualTo: 'completed',
-          ) // ← FIX: Use transactionStatus
-          .get();
-
-      double totalInvested = 0;
-      double totalBalance = 0;
-      double totalReturns = 0;
-      int activeInvestors = 0;
-
-      // Calculate user-level totals
-      for (var doc in usersSnapshot.docs) {
-        final data = doc.data();
-        final fpData = data['financialProfile'] as Map<String, dynamic>?;
-        if (fpData != null) {
-          totalInvested += (fpData['totalInvested'] ?? 0).toDouble();
-          totalBalance += (fpData['accountBalance'] ?? 0).toDouble();
-          totalReturns += (fpData['totalReturns'] ?? 0).toDouble();
-          if ((fpData['totalInvested'] ?? 0) > 0) activeInvestors++;
-        }
-      }
-
-      // Calculate transaction volume
-      double totalTransactionVolume = 0;
-      for (var doc in transactionsSnapshot.docs) {
-        totalTransactionVolume += (doc.data()['amount'] ?? 0).toDouble();
-      }
-
-      // ✅ PLATFORM BALANCE = accountBalance + invested + returns
-      final platformBalance = totalBalance + totalInvested + totalReturns;
-
-      return {
-        'totalUsers': usersSnapshot.size,
-        'activeInvestors': activeInvestors,
-        'totalInvestments': investmentsSnapshot.size,
-        'totalInvested': totalInvested,
-        'accountBalance': totalBalance, // ← Breakdown #1
-        'totalReturns': totalReturns, // ← Breakdown #2
-        'platformBalance': platformBalance, // ← Total
-        'totalTransactions': transactionsSnapshot.size,
-        'transactionVolume': totalTransactionVolume,
-      };
-    } catch (e) {
-      log('[AdminService] Error fetching stats: $e');
-      return {};
-    }
-  }
-  // ==================== INVESTMENT PLANS ====================
+  // // ==================== INVESTMENT PLANS ====================
 
   /// Create a new investment plan
   Future<DocumentReference> createPlan(InvestmentPlanModel plan) async {

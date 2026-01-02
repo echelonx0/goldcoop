@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:delayed_display/delayed_display.dart';
-import '../../../core/theme/admin_design_system.dart';
-import '../../../models/support_models.dart';
-import '../../../services/support_service.dart';
+import '../../../../../core/theme/admin_design_system.dart';
+import '../../../../../models/support_models.dart';
+import '../../../../../services/support_service.dart';
 
 class AdminChatScreen extends StatefulWidget {
   final String conversationId;

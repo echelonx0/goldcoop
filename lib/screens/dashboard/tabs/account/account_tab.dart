@@ -9,7 +9,6 @@ import '../../../../core/theme/admin_design_system.dart';
 import '../../../../models/user_model.dart';
 import '../../../../providers/auth_provider.dart';
 import '../../../../services/firestore_service.dart';
-import '../../../admin/dashboard/admin_dashboard.dart';
 
 import 'change_password_screen.dart';
 import 'controllers/account_tab_controller.dart';
@@ -253,12 +252,6 @@ class AccountTab extends StatelessWidget {
   Widget _buildSettingsListWithStagger(BuildContext context, String uid) {
     final settingsItems = [
       _SettingItem(
-        icon: Icons.admin_panel_settings,
-        title: 'Admin Dashboard',
-        subtitle: 'Manage investments and users',
-        onTap: () => _navigateToAdmin(context),
-      ),
-      _SettingItem(
         icon: Icons.lock_outline,
         title: 'Change Password',
         subtitle: 'Update your password regularly',
@@ -418,16 +411,6 @@ class AccountTab extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (context) => EditProfileScreen(authProvider: authProvider),
-      ),
-    );
-  }
-
-  void _navigateToAdmin(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            const AdminDashboard(adminId: '', adminName: '', adminAvatar: ''),
       ),
     );
   }

@@ -35,7 +35,7 @@ class AdminBottomNav extends StatelessWidget {
               _NavItem(
                 icon: Icons.dashboard_outlined,
                 activeIcon: Icons.dashboard,
-                label: 'Dashboard',
+                label: 'Overview',
                 index: 0,
                 selectedIndex: selectedIndex,
                 onTap: onIndexChanged,
@@ -43,7 +43,7 @@ class AdminBottomNav extends StatelessWidget {
               _NavItem(
                 icon: Icons.trending_up_outlined,
                 activeIcon: Icons.trending_up,
-                label: 'Investments',
+                label: 'Manage',
                 index: 1,
                 selectedIndex: selectedIndex,
                 onTap: onIndexChanged,

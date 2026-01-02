@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../models/user_model.dart';
 import '../../../models/support_models.dart';
 import '../../../services/support_service.dart';
+import '../../admin/dashboard/admin_dashboard.dart';
 
 class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
   final UserModel? user;
@@ -25,6 +26,16 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
+  void _navigateToAdmin(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            const AdminDashboard(adminId: '', adminName: '', adminAvatar: ''),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppBar(
@@ -40,13 +51,18 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
-        NotificationBadge(
-          userId: uid,
-          supportService: supportService,
-          onNotificationTap: (notification) {
-            onNotificationTap(notification, uid, user);
-          },
-        ),
+        user!.email == 'nkiru.olivia@gmail.com'
+            ? GestureDetector(
+                onTap: () => _navigateToAdmin(context),
+                child: Text('Admin'),
+              )
+            : NotificationBadge(
+                userId: uid,
+                supportService: supportService,
+                onNotificationTap: (notification) {
+                  onNotificationTap(notification, uid, user);
+                },
+              ),
         const SizedBox(width: 8),
         IconButton(
           icon: const Icon(Icons.settings_outlined, size: 22),

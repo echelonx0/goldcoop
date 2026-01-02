@@ -30,12 +30,15 @@ class _InvestmentPlansManagementState extends State<InvestmentPlansManagement> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _buildHeader(),
-        _buildFilters(),
-        Expanded(child: _buildPlansList()),
-      ],
+    return Scaffold(
+      body: Column(
+        children: [
+          SizedBox(height: 60),
+          _buildHeader(),
+          _buildFilters(),
+          Expanded(child: _buildPlansList()),
+        ],
+      ),
     );
   }
 
@@ -45,6 +48,12 @@ class _InvestmentPlansManagementState extends State<InvestmentPlansManagement> {
       padding: const EdgeInsets.all(AdminDesignSystem.spacing16),
       child: Row(
         children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_ios),
+            color: AdminDesignSystem.accentTeal,
+            iconSize: 32,
+          ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,7 +66,7 @@ class _InvestmentPlansManagementState extends State<InvestmentPlansManagement> {
                 ),
                 const SizedBox(height: AdminDesignSystem.spacing4),
                 Text(
-                  'Manage investment plans for GOLD',
+                  'Manage investment plans',
                   style: AdminDesignSystem.bodyMedium,
                 ),
               ],
