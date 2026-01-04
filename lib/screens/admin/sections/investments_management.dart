@@ -5,8 +5,9 @@ import 'dart:developer' as dev;
 import '../../../core/theme/admin_design_system.dart';
 import '../../../models/investment_plan_model.dart';
 import '../../../services/investment_plan_service.dart';
-import '../../../services/admin_service.dart';
+
 import '../forms/investment_form.dart';
+import '../services/admin_service.dart' show AdminService;
 
 class InvestmentPlansManagement extends StatefulWidget {
   const InvestmentPlansManagement({super.key});

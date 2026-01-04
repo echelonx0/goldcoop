@@ -3,9 +3,9 @@
 import 'dart:io';
 import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/payment_proof_model.dart';
-import '../models/transaction_model.dart';
-import 'storage_service.dart';
+import '../../../models/payment_proof_model.dart';
+import '../../../models/transaction_model.dart';
+import '../../../services/storage_service.dart';
 
 /// Dedicated service for handling all deposit-related operations
 /// Includes: pending transactions, proof uploads, verification workflow
@@ -252,8 +252,6 @@ class DepositService {
         );
   }
 
-  // lib/services/deposit_service.dart - approvePaymentProof FIXED
-
   /// Approve payment proof (admin action)
   Future<bool> approvePaymentProof({
     required String proofId,
@@ -273,9 +271,6 @@ class DepositService {
           'verifiedAt': FieldValue.serverTimestamp(),
         });
 
-        // 2. Update transaction status to completed
-        // ✅ FIXED: Use 'transactionStatus' (not 'status')
-        // ✅ FIXED: Add 'transactionType' to ensure it's set for query
         final txnRef = _firestore
             .collection('transactions')
             .doc(proof.transactionId);

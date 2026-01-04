@@ -35,7 +35,7 @@ class SupportQuickStats extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _QuickStatCard(
-                      label: 'Open Tickets',
+                      label: 'Tickets',
                       value: '${stats['openTickets'] ?? 0}',
                       color: AdminDesignSystem.statusError,
                       icon: Icons.support_sharp,

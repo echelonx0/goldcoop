@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:delayed_display/delayed_display.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../models/user_model.dart';
-import '../../../services/admin_service.dart';
+import '../services/admin_service.dart';
 
 void showUserEditSheet(
   BuildContext context,

@@ -2,12 +2,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:delayed_display/delayed_display.dart';
-import '../../../../core/theme/admin_design_system.dart';
-import '../../../../services/admin_service.dart';
+import '../../../../../core/theme/admin_design_system.dart';
 
-import '../widgets/stats_grid.dart';
-import '../widgets/support_quick_stats.dart';
-import '../widgets/stats_skeleton_loader.dart';
+import '../../../services/admin_service.dart';
+import '../../widgets/loading_state.dart';
+import '../../widgets/stats_grid.dart';
+import '../../widgets/support_quick_stats.dart';
 
 class OverviewTab extends StatelessWidget {
   final AdminService adminService;
@@ -20,7 +20,7 @@ class OverviewTab extends StatelessWidget {
       future: adminService.getAdminStats(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingState();
+          return const AdminLoadingState();
         }
 
         if (snapshot.hasError) {
@@ -62,49 +62,6 @@ class OverviewTab extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: AdminDesignSystem.spacing16),
-
-          // Loading message
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AdminDesignSystem.spacing16,
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AdminDesignSystem.accentTeal,
-                  ),
-                ),
-                const SizedBox(width: AdminDesignSystem.spacing12),
-                Text(
-                  'Loading platform metrics...',
-                  style: AdminDesignSystem.bodySmall.copyWith(
-                    color: AdminDesignSystem.textSecondary,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: AdminDesignSystem.spacing16),
-
-          // Skeleton loader
-          const StatsSkeletonLoader(),
-        ],
-      ),
     );
   }
 

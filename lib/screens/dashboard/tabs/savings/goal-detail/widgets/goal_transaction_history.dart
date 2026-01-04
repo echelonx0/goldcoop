@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../../../../../core/theme/app_colors.dart';
 import '../../../../../../models/payment_proof_model.dart';
-import '../../../../../../services/deposit_service.dart';
+import '../../../../../admin/services/deposit_service.dart';
 
 class GoalTransactionHistory extends StatelessWidget {
   final String goalId;

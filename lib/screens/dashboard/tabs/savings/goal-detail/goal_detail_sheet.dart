@@ -7,7 +7,7 @@ import '../../../../../components/base/app_button.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../models/goals_model.dart';
 import '../../../../../models/payment_proof_model.dart';
-import '../../../../../services/deposit_service.dart';
+import '../../../../admin/services/deposit_service.dart';
 import '../../../../../services/firestore_service.dart';
 import 'widgets/goal_category_card.dart';
 import 'widgets/goal_completion_header.dart';
