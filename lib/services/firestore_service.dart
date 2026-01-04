@@ -13,7 +13,12 @@ import '../screens/dashboard/modals/learning_interest_modal.dart';
 
 class FirestoreService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // Add this to lib/services/firestore_service.dart
 
+  // Add this getter to the FirestoreService class:
+
+  /// Access to FirebaseFirestore instance for custom queries
+  FirebaseFirestore get firestore => _firestore;
   // ==================== LEARNING INTERESTS ====================
 
   /// Save user's learning interests (for Learning Center waitlist)

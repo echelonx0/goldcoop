@@ -252,6 +252,8 @@ class DepositService {
         );
   }
 
+  // lib/services/deposit_service.dart - approvePaymentProof FIXED
+
   /// Approve payment proof (admin action)
   Future<bool> approvePaymentProof({
     required String proofId,
@@ -272,11 +274,14 @@ class DepositService {
         });
 
         // 2. Update transaction status to completed
+        // ✅ FIXED: Use 'transactionStatus' (not 'status')
+        // ✅ FIXED: Add 'transactionType' to ensure it's set for query
         final txnRef = _firestore
             .collection('transactions')
             .doc(proof.transactionId);
         transaction.update(txnRef, {
-          'status': TransactionStatus.completed.name,
+          'transactionStatus': TransactionStatus.completed.name, // ✅ CORRECT
+          'transactionType': TransactionType.deposit.name, // ✅ ADD THIS
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
@@ -320,6 +325,74 @@ class DepositService {
       return false;
     }
   }
+  // /// Approve payment proof (admin action)
+  // Future<bool> approvePaymentProof({
+  //   required String proofId,
+  //   required String adminUserId,
+  // }) async {
+  //   try {
+  //     // Get the proof to find linked transaction
+  //     final proof = await getPaymentProofById(proofId);
+  //     if (proof == null) return false;
+
+  //     await _firestore.runTransaction((transaction) async {
+  //       // 1. Update proof status
+  //       final proofRef = _firestore.collection('payment_proofs').doc(proofId);
+  //       transaction.update(proofRef, {
+  //         'verificationStatus': PaymentProofStatus.approved.name,
+  //         'verifiedBy': adminUserId,
+  //         'verifiedAt': FieldValue.serverTimestamp(),
+  //       });
+
+  //       // 2. Update transaction status to completed
+  //       final txnRef = _firestore
+  //           .collection('transactions')
+  //           .doc(proof.transactionId);
+  //       transaction.update(txnRef, {
+  //         'status': TransactionStatus.completed.name,
+  //         'updatedAt': FieldValue.serverTimestamp(),
+  //       });
+
+  //       // 3. If linked to goal, update goal amount
+  //       if (proof.goalId != null) {
+  //         final amount = proof.metadata['amount'] as double? ?? 0.0;
+  //         final goalRef = _firestore
+  //             .collection('clients')
+  //             .doc(proof.userId)
+  //             .collection('goals')
+  //             .doc(proof.goalId);
+
+  //         // Get current goal amount
+  //         final goalDoc = await transaction.get(goalRef);
+  //         if (goalDoc.exists) {
+  //           final goalData = goalDoc.data()!;
+  //           final currentAmount = (goalData['currentAmount'] ?? 0.0) as double;
+  //           final newAmount = currentAmount + amount;
+
+  //           transaction.update(goalRef, {
+  //             'currentAmount': newAmount,
+  //             'updatedAt': FieldValue.serverTimestamp(),
+  //           });
+  //         }
+  //       } else {
+  //         // Update general savings balance
+  //         final amount = proof.metadata['amount'] as double? ?? 0.0;
+  //         final userRef = _firestore.collection('clients').doc(proof.userId);
+
+  //         transaction.update(userRef, {
+  //           'financialProfile.accountBalance': FieldValue.increment(amount),
+  //           'updatedAt': FieldValue.serverTimestamp(),
+  //         });
+  //       }
+  //     });
+
+  //     log('✅ Payment proof approved: $proofId');
+  //     return true;
+  //   } catch (e) {
+  //     log('❌ Error approving payment proof: $e');
+  //     return false;
+  //   }
+  // }
 
   /// Reject payment proof (admin action)
   Future<bool> rejectPaymentProof({

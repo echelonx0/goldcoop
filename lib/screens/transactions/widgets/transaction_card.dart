@@ -113,14 +113,14 @@ class TransactionCard extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                if (transaction.fees! > 0)
-                  Text(
-                    'Fee: ₦${transaction.fees!.toStringAsFixed(0)}',
-                    style: AppTextTheme.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 11,
-                    ),
-                  ),
+                // if (transaction.fees! > 0)
+                //   Text(
+                //     'Fee: ₦${transaction.fees!.toStringAsFixed(0)}',
+                //     style: AppTextTheme.bodySmall.copyWith(
+                //       color: AppColors.textSecondary,
+                //       fontSize: 11,
+                //     ),
+                //   ),
               ],
             ),
           ],

@@ -25,6 +25,10 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  static const Set<String> _adminEmails = {
+    'nkiru.olivia@gmail.com',
+    'btankotech@gmail.com',
+  };
 
   void _navigateToAdmin(BuildContext context) {
     Navigator.push(
@@ -38,6 +42,8 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String? email = user?.email;
+    final bool isAdmin = email != null && _adminEmails.contains(email);
     return AppBar(
       backgroundColor: AppColors.backgroundWhite,
       automaticallyImplyLeading: false,
@@ -51,18 +57,30 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       actions: [
-        user!.email == 'nkiru.olivia@gmail.com'
-            ? GestureDetector(
-                onTap: () => _navigateToAdmin(context),
-                child: Text('Admin'),
-              )
-            : NotificationBadge(
-                userId: uid,
-                supportService: supportService,
-                onNotificationTap: (notification) {
-                  onNotificationTap(notification, uid, user);
-                },
+        if (isAdmin)
+          GestureDetector(
+            onTap: () => _navigateToAdmin(context),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Center(
+                child: Text(
+                  'Admin',
+                  style: AppTextTheme.bodySmall.copyWith(
+                    color: AppColors.deepNavy,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
+            ),
+          )
+        else
+          NotificationBadge(
+            userId: uid,
+            supportService: supportService,
+            onNotificationTap: (notification) {
+              onNotificationTap(notification, uid, user);
+            },
+          ),
         const SizedBox(width: 8),
         IconButton(
           icon: const Icon(Icons.settings_outlined, size: 22),
